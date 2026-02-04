@@ -4,7 +4,6 @@ const os = require('os');
 const app = express();
 const PORT = 5000;
 
-// Al usar '.' le indicamos que los archivos están en la misma carpeta que este script
 app.use(express.static(path.join(__dirname, '.')));
 
 // Forzamos que al entrar a la raíz se entregue el index.html

@@ -3,7 +3,7 @@ const assets = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/styles/style.css', // Asegúrate que el nombre coincida con tu archivo
+  '/styles/style.css', 
   '/assets/logo_toro.png'
 ];
 
