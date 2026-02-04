@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T.O.R.O - Login</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles/style.css">
+    <style>
+        :root {
+            --primary-green: #4CAF50;
+            --dark-green: #2E7D32;
+            --bg-light: #F8F9FA;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            color: var(--primary-green);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .brand-name {
+            font-size: 2.5rem;
+            color: var(--dark-green);
+            font-weight: 800;
+            margin: 0 0 1rem 0;
+            letter-spacing: 2px;
+        }
+
+        .logo-cbta {
+            width: 120px;
+            margin-bottom: 1.5rem;
+        }
+
+        .instruction {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1.5px solid #DDD;
+            border-radius: 12px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-green);
+        }
+
+        .btn-continuar {
+            width: 100%;
+            padding: 0.9rem;
+            background-color: #689F38; /* Color similar al de tu captura */
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="welcome-text">Te damos la bienvenida al sistema</div>
+        <h1 class="brand-name">T.O.R.O</h1>
+
+        <img src="assets/logo_toro.png" alt="Logo CBTA 251" class="logo-cbta">
+
+        <p class="instruction">A continuación, ingresa tus datos estudiantiles:</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label>Matrícula</label>
+                <input type="text" id="matricula" placeholder="EJ. 012203432" required minlength="20">
+            </div>
+
+            <div class="input-group">
+                <label>Nombre completo</label>
+                <input type="text" id="nombre" placeholder="EJ. Juan Pérez" required minlength="20">
+            </div>
+
+            <button type="submit" class="btn-continuar">Continuar</button>
+        </form>
+    </div>
+
+    <script>
+        // Registro del Service Worker para funcionamiento OFFLINE
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('T.O.R.O. Offline activo'))
+                    .catch(err => console.log('Error en PWA:', err));
+            });
+        }
+
+        // Manejo del Login y guardado en LocalStorage
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const matricula = document.getElementById('matricula').value;
+            const nombre = document.getElementById('nombre').value;
+
+            // Guardamos localmente (No necesitamos servidor para esto)
+            localStorage.setItem('toro_matricula', matricula);
+            localStorage.setItem('toro_nombre', nombre);
+
+            alert('Datos guardados localmente. ¡Bienvenido!');
+            // Aquí podrías redireccionar: window.location.href = 'home.html';
+        });
+    </script>
+</body>
+</html>
