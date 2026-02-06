@@ -1,0 +1,84 @@
+:root {
+    --primary-green: #4CAF50;
+    --dark-green: #2E7D32;
+    --bg-light: #f7f9fc; /* El color gris claro de fondo que se ve en tu captura */
+}
+
+/* 1. Forzamos que el fondo ocupe TODO el visor del celular */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-light); /* Fondo uniforme en toda la pantalla */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Permite que el contenido empiece desde arriba */
+}
+
+/* 2. El contenedor ahora es invisible (sin fondo blanco ni sombras) */
+.login-container {
+    width: 100%;
+    max-width: 500px; /* Para que no se estire de más en tablets */
+    min-height: 100vh;
+    padding: 2rem 1.5rem; /* Espaciado interno para que los inputs no toquen los bordes */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box; /* Crucial para que el padding no rompa el ancho */
+    background: transparent; /* Quitamos el recuadro blanco */
+    box-shadow: none; /* Quitamos la sombra */
+    border-radius: 0; /* No necesita bordes redondeados si es pantalla completa */
+}
+
+/* 3. Ajustamos el logo y textos para que se centren mejor */
+.logo-cbta {
+    width: 150px; /* Ajusta el tamaño según tu preferencia */
+    margin: 1.5rem 0;
+}
+
+.instruction {
+    color: #888;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* 4. Inputs estirados al 100% del ancho disponible */
+#loginForm {
+    width: 100%;
+}
+
+.input-group {
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+input {
+    width: 100%;
+    padding: 1rem;
+    border: 1.5px solid #d1d1d1;
+    border-radius: 15px; /* Bordes más suaves como en tu imagen */
+    box-sizing: border-box;
+    font-size: 1rem;
+    background-color: white; /* El input sí es blanco */
+}
+
+/* 5. El botón verde grande de tu referencia */
+.btn-continuar {
+    width: 100%;
+    padding: 1.1rem;
+    background-color: #689f38; 
+    color: white;
+    border: none;
+    border-radius: 30px; /* Muy redondeado como en la imagen */
+    font-size: 1.2rem;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: 1rem;
+}

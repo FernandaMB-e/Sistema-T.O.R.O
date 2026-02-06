@@ -1,34 +1,27 @@
 const express = require('express');
 const path = require('path');
-const os = require('os');
 const app = express();
 const PORT = 5000;
 
-app.use(express.static(path.join(__dirname, '.')));
-
-// Forzamos que al entrar a la raíz se entregue el index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Middleware para ver los códigos HTTP en la consola
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        // Imprime: MÉTODO | RUTA | CÓDIGO HTTP | TIEMPO
+        console.log(`${req.method} ${req.originalUrl} - [${res.statusCode}] - ${duration}ms`);
+    });
+    next();
 });
 
-function obtenerIpLocal() {
-    const interfaces = os.networkInterfaces();
-    for (let nombre in interfaces) {
-        for (let interfaz of interfaces[nombre]) {
-            if (interfaz.family === 'IPv4' && !interfaz.internal) {
-                return interfaz.address;
-            }
-        }
-    }
-    return 'localhost';
-}
+// Servir archivos estáticos
+app.use(express.static(path.join(__dirname, './')));
 
 app.listen(PORT, '0.0.0.0', () => {
-    const IP_LOCAL = obtenerIpLocal();
-    console.log(`\n==================================================`);
-    console.log(`      SISTEMA T.O.R.O. - SERVIDOR ACTIVO`);
-    console.log(`==================================================`);
-    console.log(` Accede desde este equipo: http://localhost:${PORT}`);
-    console.log(` Accede desde el móvil:    http://${IP_LOCAL}:${PORT}`);
-    console.log(`==================================================\n`);
+    console.log('====================================');
+    console.log('   SISTEMA T.O.R.O. - MODO DEBUG');
+    console.log('====================================');
+    console.log(`Acceso Local: http://localhost:${PORT}`);
+    console.log(`Acceso Alumnos: http://192.168.100.22:${PORT}`);
+    console.log('Esperando conexiones...');
 });
