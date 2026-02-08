@@ -295,6 +295,11 @@
         </div>
     </div>
 
+
+    <script src="jszip.min.js"></script>
+
+
+
     <script>
         //============== SERVIDOR SW =====================
         //se registra
@@ -346,8 +351,8 @@
                     <h2 style="color: var(--color-text-blue); font-size: 15px; text-align: left;">Importar nuevas lecciones</h2>
                     <div class="upload-area">
                         <span style="font-size: 35px; margin-bottom: 10px;">📂</span>
-                        <input type="file" id="fileInput" accept=".html" hidden onchange="actualizarNombreArchivo(this)">
-                        <button onclick="document.getElementById('fileInput').click()" style="padding: 8px 20px; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; background: white;">Seleccionar HTML</button>
+                        <input type="file" id="fileInput" accept=".zip" hidden onchange="actualizarNombreArchivo(this)">
+<button onclick="document.getElementById('fileInput').click()" ...>Seleccionar ZIP</button>
                         <div id="file-status" style="font-size: 11px; margin-top: 8px; color: #888;">Ningún archivo seleccionado</div>
                     </div>
 
@@ -470,6 +475,8 @@
         */
 
         // ========== VER LECCIÓN IMPORTADA ==========
+
+        /*
         function verLeccionImportada(index) {
             const leccion = leccionesMemoria[index];
             leccionActual = leccion;
@@ -478,56 +485,238 @@
             document.getElementById('lesson-modal').style.display = 'flex';
         }
 
+        */
+       
+
+
+
+function verLeccionImportada(index) {
+    const leccion = leccionesMemoria[index];
+    leccionActual = leccion;
+
+    const contenedor = document.getElementById('lesson-viewer-content');
+    
+    // 1. Limpiamos URLs viejas para liberar RAM (Muy importante en móviles viejos)
+    // if (window.toro_recursos) {
+    //    Object.values(window.toro_recursos).forEach(url => URL.revokeObjectURL(url));
+    // }
+
+    contenedor.innerHTML = leccion.html;
+
+    // 2. Reparador universal de imágenes
+    const imagenes = contenedor.querySelectorAll('img');
+    imagenes.forEach(img => {
+        const srcOriginal = img.getAttribute('src');
+        // Esto busca la imagen sin importar si el profesor la puso con ./ o sin nada
+        const nombreLimpio = srcOriginal.replace('./', ''); 
+        const rutaConCarpeta = leccion.rutaBase + nombreLimpio;
+
+        const blobUrl = window.toro_recursos[nombreLimpio] || 
+                        window.toro_recursos[rutaConCarpeta] || 
+                        window.toro_recursos[srcOriginal];
+
+        if (blobUrl) img.src = blobUrl;
+    });
+
+    document.getElementById('lesson-modal').style.display = 'flex';
+}
+
+
+
         // ========== INICIAR ACTIVIDAD ==========
         //logica similar
+
+
         function iniciarActividadDesdeLeccion() {
             document.getElementById('lesson-modal').style.display = 'none';
             abrirModal('inicio');
         }
 
+     
         function aceptarEIrAActividad() {
-            document.getElementById('modal-container').style.display = 'none';
-            
-            if (!leccionActual || !leccionActual.actividad) {
-                alert("Esta lección no tiene actividad configurada aún.");
-                return;
-            }
-            
-            mostrarActividad();
-        }
+    document.getElementById('modal-container').style.display = 'none';
+    
+    // Si no tiene actividad parseada NI tiene HTML de ZIP, entonces sí damos el aviso
+    if (!leccionActual || (!leccionActual.actividad && !leccionActual.html)) {
+        alert("Esta lección no tiene actividad configurada aún.");
+        return;
+    }
+    
+    mostrarActividad();
+}
+
 
         // ========== MOSTRAR ACTIVIDAD ==========
-        function mostrarActividad() {
-            respuestasUsuario = {};
-            const preguntas = leccionActual.actividad.preguntas;
-            
-            let html = `
-                <div style="background-color: #2b59a2; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0;"> Actividad Calificable</h3>
-                    <p style="margin: 5px 0 0 0; font-size: 14px;">Responde todas las preguntas</p>
-                </div>
-            `;
-            
-            preguntas.forEach((p, i) => {
-                html += `
-                    <div class="question-card">
-                        <p style="font-weight: bold; margin-bottom: 10px;">${i + 1}. ${p.pregunta}</p>
-                `;
-                
-                p.opciones.forEach((opcion, j) => {
-                    html += `
-                        <button class="option-btn" onclick="seleccionarRespuesta(${i}, ${j}, this)">
-                            ${String.fromCharCode(65 + j)}. ${opcion}
-                        </button>
-                    `;
-                });
-                
-                html += `</div>`;
-            });
-            
-            document.getElementById('actividad-viewer-content').innerHTML = html;
-            document.getElementById('actividad-modal').style.display = 'flex';
+
+/* FUNCION CON ASCII
+function mostrarActividad() {
+    respuestasUsuario = {};
+    const contenedor = document.getElementById('actividad-viewer-content');
+
+    if (leccionActual.html) {
+        contenedor.innerHTML = leccionActual.html;
+
+        // Reparar imágenes del ZIP
+        const imagenes = contenedor.querySelectorAll('img');
+        imagenes.forEach(img => {
+            const srcOriginal = img.getAttribute('src');
+            const nombreLimpio = srcOriginal.replace('./', ''); 
+            const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
+            const blobUrl = window.toro_recursos[nombreLimpio] || 
+                            window.toro_recursos[rutaConCarpeta] || 
+                            window.toro_recursos[srcOriginal];
+            if (blobUrl) img.src = blobUrl;
+        });
+
+        setTimeout(() => {
+            const secLectura = contenedor.querySelector('#lectura');
+            const secQuiz = contenedor.querySelector('#quiz');
+            if (secLectura && secQuiz) {
+                secLectura.style.display = 'none';
+                secQuiz.style.display = 'block';
+            }
+
+            // LÓGICA DE EVALUACIÓN
+            const btnFinalizar = contenedor.querySelector('.btn');
+            if (btnFinalizar) {
+                btnFinalizar.onclick = function() {
+                    let aciertos = 0;
+                    const tarjetas = contenedor.querySelectorAll('.question-card');
+                    
+                    tarjetas.forEach((card, index) => {
+                        const datoOculto = parseInt(card.getAttribute('data-verif'));
+                        const letraCorrecta = String.fromCharCode(datoOculto - 46); // Decodifica ASCII
+                        const seleccionada = card.querySelector(`input[type="radio"]:checked`);
+                        
+                        if (seleccionada && seleccionada.value === letraCorrecta) aciertos++;
+                    });
+
+                    document.getElementById('actividad-modal').style.display = 'none';
+                    guardarResultado(aciertos, tarjetas.length);
+                    abrirModal('resultado', aciertos);
+                };
+            }
+        }, 100);
+    }
+    document.getElementById('actividad-modal').style.display = 'flex';
+}
+
+*/
+
+
+
+
+
+function mostrarActividad() {
+    const contenedor = document.getElementById('actividad-viewer-content');
+    
+    // 1. ABRIR EL MODAL (Prioridad para PWA)
+    document.getElementById('actividad-modal').style.display = 'flex';
+    document.getElementById('lesson-modal').style.display = 'none';
+    document.getElementById('actividad-modal').scrollTop = 0;
+
+    if (leccionActual && leccionActual.html) {
+        contenedor.innerHTML = leccionActual.html;
+        
+        // Reparar imágenes
+        const imagenes = contenedor.querySelectorAll('img');
+        imagenes.forEach(img => {
+            const srcOriginal = img.getAttribute('src');
+            const nombreLimpio = srcOriginal.replace('./', ''); 
+            const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
+            const blobUrl = window.toro_recursos[nombreLimpio] || 
+                            window.toro_recursos[rutaConCarpeta] || 
+                            window.toro_recursos[srcOriginal];
+            if (blobUrl) img.src = blobUrl;
+        });
+
+        // Separar secciones visuales
+        const secLectura = contenedor.querySelector('#lectura');
+        const secQuiz = contenedor.querySelector('#quiz');
+        const tabsProfesor = contenedor.querySelector('.tabs');
+        if (secLectura) secLectura.style.display = 'none';
+        if (tabsProfesor) tabsProfesor.style.display = 'none';
+        if (secQuiz) {
+            secQuiz.style.display = 'block';
+            secQuiz.classList.add('active');
         }
+
+        // 2. LÓGICA DEL BOTÓN (Con el nuevo formato de reporte)
+        const btnToro = document.getElementById('btn-finalizar-actividad');
+        btnToro.onclick = function(e) {
+            if(e) e.preventDefault(); 
+
+            const tarjetas = contenedor.querySelectorAll('.question-card');
+            const totalPreguntas = tarjetas.length || 2; 
+
+            let aciertosReales = 0;
+            let respondidas = 0;
+
+            for (let i = 1; i <= totalPreguntas; i++) {
+                const radio = contenedor.querySelector(`input[name="p${i}"]:checked`);
+                if (radio) {
+                    respondidas++;
+                    // Validación P1=a, P2=b (Ajustable según el contenido)
+                    if (i === 1 && radio.value === "a") aciertosReales++;
+                    if (i === 2 && radio.value === "b") aciertosReales++;
+                }
+            }
+
+            if (respondidas < totalPreguntas) {
+                alert("Por favor, responde todas las preguntas.");
+                return;
+            }
+
+            // Cálculos de nota
+            const notaEscalada = (aciertosReales / totalPreguntas) * 10;
+            const porcentaje = (aciertosReales / totalPreguntas) * 100;
+            const estado = notaEscalada >= 6 ? "APROBADO" : "REPROBADO";
+            
+            // Datos para el reporte
+            const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+            const mat = localStorage.getItem('toro_matricula') || "000000000";
+            
+            // Fecha con el formato exacto solicitado
+            const opcionesFecha = { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', 
+                hour: 'numeric', minute: 'numeric', hour12: true 
+            };
+            const fechaHora = new Date().toLocaleString('es-MX', opcionesFecha);
+
+            // Generación de Hash y Firma (Seguridad)
+            const seed = `${mat}-${notaEscalada}-${Date.now()}`;
+            const hashVerif = btoa(seed).substring(0, 32).toLowerCase();
+            const firmaInteg = btoa(`${nombre}-${mat}-TORO-SYSTEM`).substring(0, 32).toLowerCase();
+
+            // FORMATO SOLICITADO
+            const reporteTxt = `╔═══════════════════════════════════════════════════════╗
+║            REPORTE DE EVALUACIÓN T.O.R.O              ║
+╚═══════════════════════════════════════════════════════╝
+
+[DATOS DEL ESTUDIANTE]
+Matrícula:         ${mat}
+Nombre:            ${nombre}
+Fecha/Hora:        ${fechaHora}
+
+[INFORMACIÓN DE LA ACTIVIDAD]
+Título:            ${leccionActual.titulo || "Actividad del Sistema"}
+Total Preguntas:   ${totalPreguntas}
+Respuestas Correctas: ${aciertosReales}
+Calificación:      ${notaEscalada.toFixed(2)}/10
+Porcentaje:        ${porcentaje}%
+Estado:            ${estado}`;
+
+            // Descarga automática
+            const nombreArchivo = `Reporte_${mat}_${leccionActual.titulo.replace(/\s+/g, '_')}.txt`;
+            descargarArchivoTxt(reporteTxt, nombreArchivo);
+
+            // Finalización visual
+            document.getElementById('actividad-modal').style.display = 'none';
+            guardarResultado(notaEscalada, 10);
+            abrirModal('resultado', notaEscalada);
+        };
+    }
+}
 
         // ========== SELECCIONAR RESPUESTA ==========
         function seleccionarRespuesta(preguntaIndex, opcionIndex, boton) {
@@ -540,34 +729,104 @@
             respuestasUsuario[preguntaIndex] = opcionIndex;
         }
 
-        // ========== FINALIZAR ACTIVIDAD ==========
-        //Aviso para que se seleccionen todas las actividades
+        // ========== FINALIZAR ACTIVIDAD UNIFICADA ==========
         function finalizarActividad() {
-            const preguntas = leccionActual.actividad.preguntas;
+            const contenedor = document.getElementById('actividad-viewer-content');
             
-            // Verificar que todas las preguntas estan respondidas
-            if (Object.keys(respuestasUsuario).length !== preguntas.length) {
-                alert("Por favor responde todas las preguntas antes de enviar.");
-                return;
-            }
+            // DETECTAR QUÉ TIPO DE ACTIVIDAD ES
+            const tieneRadios = contenedor.querySelector('input[type="radio"]');
             
-            //======== ESTO SIGUE PENDIENTE =======
+            if (tieneRadios) {
+                // ========== ACTIVIDAD HTML (CON RADIO BUTTONS) ==========
+                const tarjetas = contenedor.querySelectorAll('.question-card, .pregunta');
+                const totalPreguntas = tarjetas.length || 2; 
 
-            // Calificar
-            let correctas = 0;
-            preguntas.forEach((p, i) => {
-                if (respuestasUsuario[i] === p.respuestaCorrecta) {
-                    correctas++;
+                let aciertosReales = 0;
+                let respondidas = 0;
+
+                for (let i = 1; i <= totalPreguntas; i++) {
+                    const radio = contenedor.querySelector(`input[name="p${i}"]:checked`);
+                    if (radio) {
+                        respondidas++;
+                        if (i === 1 && radio.value === "a") aciertosReales++;
+                        if (i === 2 && radio.value === "b") aciertosReales++;
+                    }
                 }
-            });
-            
-            // Guardar resultado
-            guardarResultado(correctas, preguntas.length);
-            
-            // Cerrar actividad y mostrar resultado
-            document.getElementById('actividad-modal').style.display = 'none';
-            abrirModal('resultado', correctas);
+
+                if (respondidas < totalPreguntas) {
+                    alert("⚠️ Por favor, responde todas las preguntas.");
+                    return;
+                }
+
+                const notaEscalada = (aciertosReales / totalPreguntas) * 10;
+                const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+                const mat = localStorage.getItem('toro_matricula') || "0000";
+                const ahora = new Date();
+                const timestamp = ahora.getTime(); 
+                const firmaSeguridad = btoa(`${mat}|${notaEscalada}|${timestamp}|TORO_SAFE`);
+
+                const contenidoReporte = `REPORTE TORO
+MATRICULA: ${mat}
+NOMBRE: ${nombre}
+NOTA: ${notaEscalada}/10
+ACIERTOS: ${aciertosReales}/${totalPreguntas}
+FECHA: ${ahora.toLocaleString('es-MX')}
+FIRMA: ${firmaSeguridad}`;
+
+                // Descarga del archivo TXT
+                descargarArchivoTxt(contenidoReporte, `RES_${mat}_${timestamp}.txt`);
+                
+                // Guardar y mostrar resultado
+                guardarResultado(notaEscalada, 10);
+                document.getElementById('actividad-modal').style.display = 'none';
+                abrirModal('resultado', notaEscalada);
+                
+            } else {
+                // ========== ACTIVIDAD PARSEADA (CON BOTONES) ==========
+                const preguntas = leccionActual.actividad.preguntas;
+                
+                // Verificar que todas las preguntas están respondidas
+                if (Object.keys(respuestasUsuario).length !== preguntas.length) {
+                    alert("⚠️ Por favor responde todas las preguntas antes de enviar.");
+                    return;
+                }
+
+                // Calificar
+                let correctas = 0;
+                preguntas.forEach((p, i) => {
+                    if (respuestasUsuario[i] === p.respuestaCorrecta) {
+                        correctas++;
+                    }
+                });
+                
+                // Generar reporte TXT
+                const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+                const mat = localStorage.getItem('toro_matricula') || "0000";
+                const ahora = new Date();
+                const timestamp = ahora.getTime(); 
+                const notaEscalada = (correctas / preguntas.length) * 10;
+                const firmaSeguridad = btoa(`${mat}|${notaEscalada}|${timestamp}|TORO_SAFE`);
+
+                const contenidoReporte = `REPORTE TORO
+MATRICULA: ${mat}
+NOMBRE: ${nombre}
+NOTA: ${notaEscalada.toFixed(1)}/10
+ACIERTOS: ${correctas}/${preguntas.length}
+FECHA: ${ahora.toLocaleString('es-MX')}
+FIRMA: ${firmaSeguridad}`;
+
+                // Descarga del archivo TXT
+                descargarArchivoTxt(contenidoReporte, `RES_${mat}_${timestamp}.txt`);
+                
+                // Guardar resultado
+                guardarResultado(correctas, preguntas.length);
+                
+                // Cerrar actividad y mostrar resultado
+                document.getElementById('actividad-modal').style.display = 'none';
+                abrirModal('resultado', notaEscalada);
+            }
         }
+
 
         // ========== GUARDA RESULTADO EN REVISION ==========
         function guardarResultado(correctas, total) {
@@ -584,58 +843,52 @@
 
 
         // ========== MODAL (ventan emergente) GENERICA EN REVISION ==========
-        function abrirModal(tipo, puntos = 0) {
-            const modal = document.getElementById('modal-container');
-            const iconDiv = document.getElementById('modal-icon');
-            const scoreSec = document.getElementById('score-section');
-            const modalTxt = document.getElementById('modal-text');
-            const scoreNum = document.getElementById('score-number');
-            const title = document.getElementById('modal-title');
-            
-            modal.style.display = 'flex';
+       
+     function abrirModal(tipo, puntos = 0) {
+    const modal = document.getElementById('modal-container');
+    const scoreNum = document.getElementById('score-number');
+    const scoreSec = document.getElementById('score-section');
+    const title = document.getElementById('modal-title');
+    const iconDiv = document.getElementById('modal-icon');
+    const modalTxt = document.getElementById('modal-text');
+    
+    modal.style.display = 'flex';
 
-            if (tipo === 'inicio') {
-                iconDiv.innerHTML = iconHand;
-                title.innerText = '¿Te sientes listo para poner a prueba lo aprendido?';
-                modalTxt.innerText = 'Una vez que comiences la actividad, no podrás volver a consultarlo hasta que hayas enviado tus respuestas.';
-                modalTxt.classList.remove('hidden');
-                scoreSec.classList.add('hidden');
-            } else {
-                iconDiv.innerHTML = iconMedal;
-                modalTxt.classList.add('hidden');
-                scoreSec.classList.remove('hidden');
-                
-                const total = leccionActual?.actividad?.preguntas?.length || 10;
-                scoreNum.innerText = `${puntos}/${total}`;
-                
-                const user = localStorage.getItem('toro_nombre') || "Estudiante";
-                const porcentaje = Math.round((puntos / total) * 100);
-                
-                if (porcentaje >= 70) {
-                    title.innerText = `¡Excelente trabajo, ${user}!`;
-                    scoreNum.className = 'score-value text-green';
-                } else if (porcentaje >= 40) {
-                    title.innerText = `¡Buen intento, ${user}!`;
-                    scoreNum.className = 'score-value text-orange';
-                } else {
-                    title.innerText = `¡Sigue practicando, ${user}!`;
-                    scoreNum.className = 'score-value text-red';
-                }
-            }
+    if (tipo === 'resultado') {
+        const total = 10; // BASE 10 FIJA
+        iconDiv.innerHTML = iconMedal;
+        modalTxt.classList.add('hidden');
+        scoreSec.classList.remove('hidden');
+        
+        scoreNum.innerText = `${puntos}/${total}`;
+        
+        const user = localStorage.getItem('toro_nombre') || "Estudiante";
+        const porcentaje = (puntos / total) * 100;
+        
+        if (porcentaje >= 70) {
+            title.innerText = `¡Excelente trabajo, ${user}!`;
+            scoreNum.className = 'score-value text-green';
+        } else if (porcentaje >= 40) {
+            title.innerText = `¡Buen intento, ${user}!`;
+            scoreNum.className = 'score-value text-orange';
+        } else {
+            title.innerText = `¡Sigue practicando, ${user}!`;
+            scoreNum.className = 'score-value text-red';
         }
+    } else if (tipo === 'inicio') {
+        iconDiv.innerHTML = iconHand;
+        title.innerText = '¿Te sientes listo?';
+        modalTxt.innerText = 'Una vez que comiences, deberás terminar.';
+        modalTxt.classList.remove('hidden');
+        scoreSec.classList.add('hidden');
+    }
+}
 
 
-        function volverALeccion() {
-            document.getElementById('modal-container').style.display = 'none';
-            document.getElementById('lesson-modal').style.display = 'flex';
-        }
 
-        function cerrarModal() { 
-            document.getElementById('modal-container').style.display = 'none'; 
-        }
 
         // ========== PROCESAR HTML IMPORTADO ==========
-        //importacion
+        /* importacion
         function procesarHTML() {
             const input = document.getElementById('fileInput');
             if (!input.files[0]) {
@@ -686,8 +939,66 @@
             reader.readAsText(input.files[0]);
         }
 
-        // ========== PARSEAR ACTIVIDAD (OBSERACION) ==========
+        */
+
+
+async function procesarHTML() {
+    const input = document.getElementById('fileInput');
+    if (!input.files[0]) return;
+
+    try {
+        const file = input.files[0];
+        const arrayBuffer = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        
+        window.toro_recursos = {}; // Reiniciamos los recursos de esta sesión
+
+        const promesas = [];
+        zip.forEach((rutaCompleta, entry) => {
+            if (!entry.dir) {
+                const p = entry.async("blob").then(blob => {
+                    // Guardamos la ruta tal cual viene en el ZIP (ej: "ejemplo_actividad/foto.jpg")
+                    window.toro_recursos[rutaCompleta] = URL.createObjectURL(blob);
+                });
+                promesas.push(p);
+            }
+        });
+
+        await Promise.all(promesas);
+
+        // Buscamos el HTML (esté en la carpeta que esté)
+        const rutaHtml = Object.keys(zip.files).find(n => n.endsWith('.html'));
+        const htmlOriginal = await zip.file(rutaHtml).async("string");
+
+        // Guardamos la lección
+        const leccionNueva = {
+            titulo: file.name.replace('.zip', ''),
+            html: htmlOriginal, 
+            rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1) // Guardamos la carpeta base
+        };
+
+        leccionesMemoria.push(leccionNueva);
+        localStorage.setItem('toro_lecciones_html', JSON.stringify(leccionesMemoria));
+        renderizarLecciones();
+        alert("✅ Importado: " + leccionNueva.titulo);
+
+    } catch (e) {
+        console.error(e);
+        alert("Error procesando la estructura del ZIP");
+    }
+}
+
+
+
+
+
+
+
+
+        // ========== PARSEAR ACTIVIDAD () ==========
         function parsearActividad(actividadDiv) {
+            // Esta función intenta extraer preguntas del HTML
+            // Debe adaptarse según la estructura real de tus HTMLs
             const preguntas = [];
             const preguntasElements = actividadDiv.querySelectorAll('.pregunta, .question');
             
@@ -775,6 +1086,18 @@
                 mostrarLogin();
             }
         });
+
+
+function descargarArchivoTxt(contenido, nombreArchivo) {
+    const elemento = document.createElement('a');
+    const archivo = new Blob([contenido], {type: 'text/plain'});
+    elemento.href = URL.createObjectURL(archivo);
+    elemento.download = nombreArchivo;
+    document.body.appendChild(elemento);
+    elemento.click();
+    document.body.removeChild(elemento);
+}
+
     </script>
 </body>
 </html>
