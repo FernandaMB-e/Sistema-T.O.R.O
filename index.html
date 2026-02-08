@@ -255,25 +255,43 @@
     <div id="main-content"></div>
 
     <!-- Modal de confirmación/resultado -->
-    <div id="modal-container" class="modal-overlay">
-        <div class="modal-content">
-            <div id="modal-header-bg" class="modal-header">
-                <div id="modal-icon"></div>
-                <h2 id="modal-title"></h2>
+   <div id="modal-container" class="modal-overlay">
+    <div class="modal-content" style="border-radius: 30px; overflow: hidden; border: none; max-width: 450px;">
+        
+        <div id="modal-header-bg" class="modal-header" style="background-color: #2b59a2; padding: 40px 20px; text-align: center; color: white;">
+            <div id="modal-icon" style="margin-bottom: 15px; font-size: 3rem;">
+                <i class="fas fa-award"></i> 
             </div>
-            <div class="modal-body" style="padding: 20px;">
-                <p id="modal-text"></p>
-                <div id="score-section" class="hidden">
-                    <span style="color: #888;">Puntaje:</span>
-                    <div id="score-number" class="score-value"></div>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn-toro" style="background: #6c757d; width: 50%;" onclick="volverALeccion()">Volver</button>
-                    <button class="btn-toro" style="background: #5d9b63; width: 50%;" onclick="aceptarEIrAActividad()">Aceptar</button>
-                </div>
+            <h2 id="modal-title" style="font-size: 1.6rem; margin: 0; font-weight: 600; line-height: 1.2;"></h2>
+        </div>
+
+        <div class="modal-body" style="padding: 30px; text-align: center;">
+            
+            <div id="score-section" class="hidden">
+                <p style="color: #888; margin: 0; font-size: 1.1rem;">Puntaje obtenido:</p>
+                <div id="score-number" style="font-size: 5rem; font-weight: 900; margin: 5px 0; line-height: 1;"></div>
+                <p id="intentos-info" style="color: #444; margin-top: 10px; font-size: 0.95rem;"></p>
+            </div>
+
+            <p id="modal-text-inicio" style="color: #555; font-size: 1.1rem; margin-bottom: 20px;"></p>
+            <p id="modal-text" class="hidden"></p>
+
+            <div id="modal-footer-btns" style="display: flex; gap: 15px; margin-top: 25px;">
+                <button id="btn-izq" class="btn-toro" 
+                        style="background-color: #637388; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;" 
+                        onclick="volverALeccion()">
+                    Volver
+                </button>
+                
+                <button id="btn-der" class="btn-toro" 
+                        style="background-color: #619b6b; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;" 
+                        onclick="aceptarEIrAActividad()">
+                    Aceptar
+                </button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Modal de contenido-->
     <div id="lesson-modal" class="modal-overlay">
@@ -299,218 +317,98 @@
     <script src="jszip.min.js"></script>
 
 
-
     <script>
         //============== SERVIDOR SW =====================
-        //se registra
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log(' Service Worker registrado:', reg.scope))
-                    .catch(err => console.error(' Error al registrar SW:', err));
-            });
-        }
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log(' Service Worker registrado:', reg.scope))
+            .catch(err => console.error(' Error al registrar SW:', err));
+    });
+}
 
-        // ========== ICONOS SVG ==========
-        const iconHand = `<svg viewBox="0 0 24 24" width="60" fill="white"><path d="M18 11V7a2 2 0 00-4 0v4h-1V2a2 2 0 00-4 0v9H8V5a2 2 0 00-4 0v10c0 5.5 4.5 10 10 10s10-4.5 10-10V13a2 2 0 00-4 0v-2z"/></svg>`;
-        const iconMedal = `<svg viewBox="0 0 24 24" width="60" fill="white"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8L12 2z"/></svg>`;
+// ========== VARIABLES GLOBALES ==========
+let leccionesMemoria = JSON.parse(localStorage.getItem('toro_lecciones_html')) || [];
+let leccionActual = null;
+window.toro_recursos = {}; // Almacena los Blobs de imágenes
 
-        // ========== ALMACENAMIENTO LOCAL ==========
-        //Es el que almacena aqui las lecciones hast que se de a "cambiar usuario", localstorage
-        let leccionesMemoria = JSON.parse(localStorage.getItem('toro_lecciones_html')) || [];
-        let leccionActual = null;
-    //    let respuestasUsuario = {};
-
-        // ========== VISTA ESTUDIANTE ==========
-        function mostrarVistaEstudiante(nombre) {
-            const root = document.getElementById('main-content');
-            root.innerHTML = `
-                <div class="mobile-container">
-                    <div class="welcome-box">
-                        <span class="welcome-text">¡Hola!</span>
-                        <span class="user-name">${nombre}</span>
-                    </div>
-                    
-                    <div class="course-title-container">
-                        <span class="course-label">Estás en el curso de</span>
-                        <div class="course-name">Cultura digital I</div>
-                        <hr class="thin-line">
-                    </div>
-                    
-                    <h2 style="color: var(--color-text-blue); font-size: 15px; text-align: left; margin-bottom: 10px;">Lecciones disponibles</h2>
-                    <div id="contenedor-lecciones" class="lesson-container"></div>
-
-                    <div class="test-grid">
-                        <button class="btn-test" onclick="abrirModal('resultado', 10)"> Ver 10/10</button>
-                        <button class="btn-test" onclick="abrirModal('resultado', 4)"> Ver 4/10</button>
-                        <button class="btn-test" onclick="abrirModal('resultado', 1)">Ver 1/10</button>
-                    </div>
-
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
-
-                    <h2 style="color: var(--color-text-blue); font-size: 15px; text-align: left;">Importar nuevas lecciones</h2>
-                    <div class="upload-area">
-                        <span style="font-size: 35px; margin-bottom: 10px;">📂</span>
-                        <input type="file" id="fileInput" accept=".zip" hidden onchange="actualizarNombreArchivo(this)">
-<button onclick="document.getElementById('fileInput').click()" ...>Seleccionar ZIP</button>
-                        <div id="file-status" style="font-size: 11px; margin-top: 8px; color: #888;">Ningún archivo seleccionado</div>
-                    </div>
-
-                    <p class="info-text">"Pulsa para cargar las lecciones"</p>
-                    <button class="btn-toro" style="background: var(--btn-green-bg);" onclick="procesarHTML()">Cargar archivos</button>
-
-                    <p class="info-text">"Pulsa para ingresar tus datos de nuevo"</p>
-                    <button class="btn-toro" style="background: var(--btn-gray-bg);" onclick="cerrarSesion()">Cambiar de usuario</button>
-                </div>
-            `;
-            renderizarLecciones();
-        }
-
-        //============== SELECTOR DE ARCHIVO ===============
-        //Aqui es donde se muestra el texto del archivo al seleccionarlo antes de cargar
-        function actualizarNombreArchivo(input) {
-            const statusDiv = document.getElementById('file-status');
-            if (input.files[0]) {
-                statusDiv.innerText = ` ${input.files[0].name}`;
-                statusDiv.style.color = '#2e7d32';
-            }
-        }
-
-        // ========== RENDERIZAR LECCIONES ==========
-        function renderizarLecciones() {
-            const contenedor = document.getElementById('contenedor-lecciones');
-            if (!contenedor) return;
+// ========== VISTA ESTUDIANTE ==========
+function mostrarVistaEstudiante(nombre) {
+    const root = document.getElementById('main-content');
+    root.innerHTML = `
+        <div class="mobile-container">
+            <div class="welcome-box">
+                <span class="welcome-text">¡Hola!</span>
+                <span class="user-name">${nombre}</span>
+            </div>
             
-
+            <div class="course-title-container">
+                <span class="course-label">Estás en el curso de</span>
+                <div class="course-name">Cultura digital I</div>
+                <hr class="thin-line">
+            </div>
             
-           /* ESTA ES LA LECCION BASE 1, SE PUEDE QUITAR NO HAY PROBLEMA, SI NO DESCOMENTECE
-            contenedor.innerHTML = `
-                <div class="lesson-card" onclick="verLeccionBase()">
-                    <span>📖 Lección 1: Repaso Base</span>
-                    <div style="height: 10px; width: 10px; background-color: #00c800; border-radius: 50%;"></div>
-                </div>
-            `;
-            */
-            
-            //Hace aparecer las lecciones en el contenedor
-            leccionesMemoria.forEach((lec, index) => {
-                const card = document.createElement('div');
-                card.className = 'lesson-card';
-                card.onclick = () => verLeccionImportada(index);
-                card.innerHTML = `
-                    <span>📖 ${lec.titulo}</span> 
-                    <div style="height: 10px; width: 10px; background-color: var(--modal-blue); border-radius: 50%;"></div>
-                `;
-                contenedor.appendChild(card);
-            });
-        }
+            <h2 style="color: var(--color-text-blue); font-size: 15px; text-align: left; margin-bottom: 10px;">Lecciones disponibles</h2>
+            <div id="contenedor-lecciones" class="lesson-container"></div>
 
-        /* ========== VER LECCIÓN BASE ==========
-        function verLeccionBase() {
-            leccionActual = {
-                contenido: `
-                    <div style="background-color: #2b59a2; color: white; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
-                        <h3 style="margin: 0;">Lección 1: Repaso General</h3>
-                    </div>
-                    <div style="border: 1px solid #dcece2; padding: 15px; border-radius: 10px; background: #f0f7f4;">
-                        <p><strong>1.- Identidad y Huella Digital</strong></p>
-                        <ul>
-                            <li><strong>Identidad Digital:</strong> Es el "tú" en internet - tu nombre, fotos, comentarios y todo lo que publicas en redes sociales.</li>
-                            <li><strong>Huella Digital:</strong> Es el rastro imborrable que dejas en internet. Cada clic, like o búsqueda queda registrado.</li>
-                        </ul>
-                        <p><strong>2.- Privacidad y Seguridad</strong></p>
-                        <ul>
-                            <li>Nunca compartas contraseñas</li>
-                            <li>Usa contraseñas fuertes (combinación de letras, números y símbolos)</li>
-                            <li>Ten cuidado con la información personal que compartes</li>
-                        </ul>
-                        <p><strong>3.- Ciberbullying</strong></p>
-                        <ul>
-                            <li>Es el acoso a través de medios digitales</li>
-                            <li>Si eres víctima: guarda evidencia, bloquea al agresor y reporta</li>
-                            <li>No seas parte del problema: no compartas contenido ofensivo</li>
-                        </ul>
-                    </div>
-                `,
-                actividad: {
-                    preguntas: [
-                        {
-                            pregunta: "¿Qué es la identidad digital?",
-                            opciones: [
-                                "Un número de identificación en internet",
-                                "La representación de una persona en el mundo digital",
-                                "Una contraseña segura",
-                                "Un tipo de red social"
-                            ],
-                            respuestaCorrecta: 1
-                        },
-                        {
-                            pregunta: "¿Qué característica NO debe tener una contraseña segura?",
-                            opciones: [
-                                "Combinación de letras y números",
-                                "Tu fecha de nacimiento",
-                                "Símbolos especiales",
-                                "Al menos 8 caracteres"
-                            ],
-                            respuestaCorrecta: 1
-                        },
-                        {
-                            pregunta: "Si eres víctima de ciberbullying, ¿qué debes hacer?",
-                            opciones: [
-                                "Responder con insultos",
-                                "Ignorarlo completamente sin tomar acción",
-                                "Guardar evidencia y reportarlo",
-                                "Eliminar todas tus redes sociales"
-                            ],
-                            respuestaCorrecta: 2
-                        }
-                    ]
-                }
-            };
-            
-            document.getElementById('lesson-viewer-content').innerHTML = leccionActual.contenido;
-            document.getElementById('lesson-modal').style.display = 'flex';
-        }
-        
-        */
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
 
-        // ========== VER LECCIÓN IMPORTADA ==========
+            <h2 style="color: var(--color-text-blue); font-size: 15px; text-align: left;">Importar nuevas lecciones</h2>
+            <div class="upload-area">
+                <span style="font-size: 35px; margin-bottom: 10px;">📂</span>
+                <input type="file" id="fileInput" accept=".zip" hidden onchange="actualizarNombreArchivo(this)">
+                <button class="btn-toro" style="background: #e3f2fd; color: #1976d2; border: 1px dashed #1976d2;" onclick="document.getElementById('fileInput').click()">Seleccionar ZIP</button>
+                <div id="file-status" style="font-size: 11px; margin-top: 8px; color: #888;">Ningún archivo seleccionado</div>
+            </div>
 
-        /*
-        function verLeccionImportada(index) {
-            const leccion = leccionesMemoria[index];
-            leccionActual = leccion;
-            //Aqui es donde inyecta y muestra
-            document.getElementById('lesson-viewer-content').innerHTML = leccion.contenido || leccion.html;
-            document.getElementById('lesson-modal').style.display = 'flex';
-        }
+            <p class="info-text">"Pulsa para cargar las lecciones"</p>
+            <button class="btn-toro" style="background: var(--btn-green-bg);" onclick="procesarHTML()">Cargar archivos</button>
 
-        */
-       
+            <p class="info-text">"Pulsa para ingresar tus datos de nuevo"</p>
+            <button class="btn-toro" style="background: var(--btn-gray-bg);" onclick="cerrarSesion()">Cambiar de usuario</button>
+        </div>
+    `;
+    renderizarLecciones();
+}
 
+function actualizarNombreArchivo(input) {
+    const statusDiv = document.getElementById('file-status');
+    if (input.files[0]) {
+        statusDiv.innerText = ` ${input.files[0].name}`;
+        statusDiv.style.color = '#2e7d32';
+    }
+}
 
+function renderizarLecciones() {
+    const contenedor = document.getElementById('contenedor-lecciones');
+    if (!contenedor) return;
+    contenedor.innerHTML = ""; // Limpiar antes de renderizar
+
+    leccionesMemoria.forEach((lec, index) => {
+        const card = document.createElement('div');
+        card.className = 'lesson-card';
+        card.onclick = () => verLeccionImportada(index);
+        card.innerHTML = `
+            <span>📖 ${lec.titulo}</span> 
+            <div style="height: 10px; width: 10px; background-color: var(--modal-blue); border-radius: 50%;"></div>
+        `;
+        contenedor.appendChild(card);
+    });
+}
 
 function verLeccionImportada(index) {
     const leccion = leccionesMemoria[index];
     leccionActual = leccion;
 
     const contenedor = document.getElementById('lesson-viewer-content');
-    
-    // 1. Limpiamos URLs viejas para liberar RAM (Muy importante en móviles viejos)
-    // if (window.toro_recursos) {
-    //    Object.values(window.toro_recursos).forEach(url => URL.revokeObjectURL(url));
-    // }
-
     contenedor.innerHTML = leccion.html;
 
-    // 2. Reparador universal de imágenes
+    // Reparar imágenes
     const imagenes = contenedor.querySelectorAll('img');
     imagenes.forEach(img => {
         const srcOriginal = img.getAttribute('src');
-        // Esto busca la imagen sin importar si el profesor la puso con ./ o sin nada
         const nombreLimpio = srcOriginal.replace('./', ''); 
         const rutaConCarpeta = leccion.rutaBase + nombreLimpio;
-
         const blobUrl = window.toro_recursos[nombreLimpio] || 
                         window.toro_recursos[rutaConCarpeta] || 
                         window.toro_recursos[srcOriginal];
@@ -521,426 +419,148 @@ function verLeccionImportada(index) {
     document.getElementById('lesson-modal').style.display = 'flex';
 }
 
+// ========== FLUJO DE ACTIVIDAD ==========
 
-
-        // ========== INICIAR ACTIVIDAD ==========
-        //logica similar
-
-
-        function iniciarActividadDesdeLeccion() {
-            document.getElementById('lesson-modal').style.display = 'none';
-            abrirModal('inicio');
-        }
-
-     
-        function aceptarEIrAActividad() {
-    document.getElementById('modal-container').style.display = 'none';
-    
-    // Si no tiene actividad parseada NI tiene HTML de ZIP, entonces sí damos el aviso
-    if (!leccionActual || (!leccionActual.actividad && !leccionActual.html)) {
-        alert("Esta lección no tiene actividad configurada aún.");
-        return;
-    }
-    
-    mostrarActividad();
-}
-
-
-        // ========== MOSTRAR ACTIVIDAD ==========
-
-/* FUNCION CON ASCII
-function mostrarActividad() {
-    respuestasUsuario = {};
-    const contenedor = document.getElementById('actividad-viewer-content');
-
-    if (leccionActual.html) {
-        contenedor.innerHTML = leccionActual.html;
-
-        // Reparar imágenes del ZIP
-        const imagenes = contenedor.querySelectorAll('img');
-        imagenes.forEach(img => {
-            const srcOriginal = img.getAttribute('src');
-            const nombreLimpio = srcOriginal.replace('./', ''); 
-            const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
-            const blobUrl = window.toro_recursos[nombreLimpio] || 
-                            window.toro_recursos[rutaConCarpeta] || 
-                            window.toro_recursos[srcOriginal];
-            if (blobUrl) img.src = blobUrl;
-        });
-
-        setTimeout(() => {
-            const secLectura = contenedor.querySelector('#lectura');
-            const secQuiz = contenedor.querySelector('#quiz');
-            if (secLectura && secQuiz) {
-                secLectura.style.display = 'none';
-                secQuiz.style.display = 'block';
-            }
-
-            // LÓGICA DE EVALUACIÓN
-            const btnFinalizar = contenedor.querySelector('.btn');
-            if (btnFinalizar) {
-                btnFinalizar.onclick = function() {
-                    let aciertos = 0;
-                    const tarjetas = contenedor.querySelectorAll('.question-card');
-                    
-                    tarjetas.forEach((card, index) => {
-                        const datoOculto = parseInt(card.getAttribute('data-verif'));
-                        const letraCorrecta = String.fromCharCode(datoOculto - 46); // Decodifica ASCII
-                        const seleccionada = card.querySelector(`input[type="radio"]:checked`);
-                        
-                        if (seleccionada && seleccionada.value === letraCorrecta) aciertos++;
-                    });
-
-                    document.getElementById('actividad-modal').style.display = 'none';
-                    guardarResultado(aciertos, tarjetas.length);
-                    abrirModal('resultado', aciertos);
-                };
-            }
-        }, 100);
-    }
-    document.getElementById('actividad-modal').style.display = 'flex';
-}
-
-*/
-
-
-
-
-
-function mostrarActividad() {
-    const contenedor = document.getElementById('actividad-viewer-content');
-    
-    // 1. ABRIR EL MODAL (Prioridad para PWA)
-    document.getElementById('actividad-modal').style.display = 'flex';
+function iniciarActividadDesdeLeccion() {
     document.getElementById('lesson-modal').style.display = 'none';
+    abrirModal('inicio');
+}
+
+function aceptarEIrAActividad() {
+    document.getElementById('modal-container').style.display = 'none';
+    if (leccionActual && leccionActual.html) {
+        mostrarActividad();
+    } else {
+        alert("Error: No se encontró el contenido de la actividad.");
+    }
+}
+
+function mostrarActividad() {
+    const contenedor = document.getElementById('actividad-viewer-content');
+    document.getElementById('actividad-modal').style.display = 'flex';
     document.getElementById('actividad-modal').scrollTop = 0;
 
-    if (leccionActual && leccionActual.html) {
-        contenedor.innerHTML = leccionActual.html;
-        
-        // Reparar imágenes
-        const imagenes = contenedor.querySelectorAll('img');
-        imagenes.forEach(img => {
-            const srcOriginal = img.getAttribute('src');
-            const nombreLimpio = srcOriginal.replace('./', ''); 
-            const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
-            const blobUrl = window.toro_recursos[nombreLimpio] || 
-                            window.toro_recursos[rutaConCarpeta] || 
-                            window.toro_recursos[srcOriginal];
-            if (blobUrl) img.src = blobUrl;
+    contenedor.innerHTML = leccionActual.html;
+
+    // 1. Reparar Imágenes en el modal de actividad
+    const imagenes = contenedor.querySelectorAll('img');
+    imagenes.forEach(img => {
+        const srcOriginal = img.getAttribute('src');
+        const nombreLimpio = srcOriginal.replace('./', ''); 
+        const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
+        const blobUrl = window.toro_recursos[nombreLimpio] || window.toro_recursos[rutaConCarpeta];
+        if (blobUrl) img.src = blobUrl;
+    });
+
+    // 2. Saltar directamente al cuestionario
+    const secLectura = contenedor.querySelector('#lectura');
+    const secQuiz = contenedor.querySelector('#quiz');
+    const tabsProfesor = contenedor.querySelector('.tabs');
+    if (secLectura) secLectura.style.display = 'none';
+    if (tabsProfesor) tabsProfesor.style.display = 'none';
+    if (secQuiz) {
+        secQuiz.style.display = 'block';
+        secQuiz.classList.add('active');
+    }
+
+    // 3. Ocultar botón verde original del profesor
+    const btnProfesor = contenedor.querySelector('.btn');
+    if (btnProfesor) btnProfesor.style.display = 'none';
+
+    // 4. Configurar el botón GRIS (Finalizar Actividad)
+    const btnToro = document.getElementById('btn-finalizar-actividad');
+    btnToro.onclick = function() {
+        const respuestasProfe = leccionActual.respuestasCorrectas || [];
+        let aciertos = 0;
+        let respondidas = 0;
+
+        respuestasProfe.forEach((res, i) => {
+            const radio = contenedor.querySelector(`input[name="p${i+1}"]:checked`);
+            if (radio) {
+                respondidas++;
+                if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
+            }
         });
 
-        // Separar secciones visuales
-        const secLectura = contenedor.querySelector('#lectura');
-        const secQuiz = contenedor.querySelector('#quiz');
-        const tabsProfesor = contenedor.querySelector('.tabs');
-        if (secLectura) secLectura.style.display = 'none';
-        if (tabsProfesor) tabsProfesor.style.display = 'none';
-        if (secQuiz) {
-            secQuiz.style.display = 'block';
-            secQuiz.classList.add('active');
+        if (respondidas < respuestasProfe.length) {
+            alert("⚠️ Por favor, responde todas las preguntas antes de finalizar.");
+            return;
         }
 
-        // 2. LÓGICA DEL BOTÓN (Con el nuevo formato de reporte)
-        const btnToro = document.getElementById('btn-finalizar-actividad');
-        btnToro.onclick = function(e) {
-            if(e) e.preventDefault(); 
+        const notaFinal = (aciertos / respuestasProfe.length) * 10;
+        
+        // Guardar en historial
+        let historial = JSON.parse(localStorage.getItem('toro_historial')) || {};
+        if (!historial[leccionActual.titulo]) historial[leccionActual.titulo] = [];
+        historial[leccionActual.titulo].push(notaFinal);
+        localStorage.setItem('toro_historial', JSON.stringify(historial));
 
-            const tarjetas = contenedor.querySelectorAll('.question-card');
-            const totalPreguntas = tarjetas.length || 2; 
+        document.getElementById('actividad-modal').style.display = 'none';
+        abrirModal('resultado', notaFinal);
+    };
+}
 
-            let aciertosReales = 0;
-            let respondidas = 0;
+// ========== SISTEMA DE MODALES UNIFICADO ==========
 
-            for (let i = 1; i <= totalPreguntas; i++) {
-                const radio = contenedor.querySelector(`input[name="p${i}"]:checked`);
-                if (radio) {
-                    respondidas++;
-                    // Validación P1=a, P2=b (Ajustable según el contenido)
-                    if (i === 1 && radio.value === "a") aciertosReales++;
-                    if (i === 2 && radio.value === "b") aciertosReales++;
-                }
-            }
+function abrirModal(tipo, puntos = 0) {
+    const modal = document.getElementById('modal-container');
+    const title = document.getElementById('modal-title');
+    const scoreNum = document.getElementById('score-number');
+    const scoreSec = document.getElementById('score-section');
+    const intentosInfo = document.getElementById('intentos-info');
+    const modalTextInicio = document.getElementById('modal-text-inicio');
+    const btnIzq = document.getElementById('btn-izq');
+    const btnDer = document.getElementById('btn-der');
+    
+    modal.style.display = 'flex';
 
-            if (respondidas < totalPreguntas) {
-                alert("Por favor, responde todas las preguntas.");
-                return;
-            }
+    const historial = JSON.parse(localStorage.getItem('toro_historial')) || {};
+    const intentosHechos = (historial[leccionActual.titulo] || []);
+    const limiteMax = leccionActual.intentosMax || 3;
+    const restantes = limiteMax - intentosHechos.length;
 
-            // Cálculos de nota
-            const notaEscalada = (aciertosReales / totalPreguntas) * 10;
-            const porcentaje = (aciertosReales / totalPreguntas) * 100;
-            const estado = notaEscalada >= 6 ? "APROBADO" : "REPROBADO";
+    if (tipo === 'inicio') {
+        title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
+        scoreSec.classList.add('hidden');
+        modalTextInicio.classList.remove('hidden');
+        modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver atrás.`;
+        
+        btnIzq.innerText = "Volver";
+        btnIzq.onclick = () => { modal.style.display = 'none'; };
+        btnDer.innerText = "Aceptar";
+        btnDer.onclick = () => { aceptarEIrAActividad(); };
+
+    } else if (tipo === 'resultado') {
+        const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+        title.innerText = `¡${puntos >= 6 ? 'Buen trabajo' : 'Puedes mejorar'}, ${nombre}!`;
+        
+        scoreSec.classList.remove('hidden');
+        modalTextInicio.classList.add('hidden');
+        
+        scoreNum.innerText = `${puntos.toFixed(1)}/10`;
+        scoreNum.style.color = puntos >= 6 ? '#2e7d32' : '#c62828';
+        intentosInfo.innerHTML = `Número de intentos disponibles: <span style="color: #2e7d32; font-weight: bold;">${restantes}</span>`;
+
+        btnIzq.innerText = "Reintentar";
+        btnIzq.style.display = restantes > 0 ? "block" : "none";
+        btnIzq.onclick = () => { abrirModal('inicio'); };
+        
+        btnDer.innerText = "Finalizar";
+        btnDer.onclick = () => {
+            const mat = localStorage.getItem('toro_matricula') || "0000";
+            let cuerpo = `REPORTE CONSOLIDADO T.O.R.O\n\nESTUDIANTE: ${nombre}\nMATRÍCULA: ${mat}\nLECCIÓN: ${leccionActual.titulo}\n\n`;
+            intentosHechos.forEach((nota, i) => cuerpo += `Intento ${i + 1}: ${nota.toFixed(1)}/10\n`);
             
-            // Datos para el reporte
-            const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-            const mat = localStorage.getItem('toro_matricula') || "000000000";
-            
-            // Fecha con el formato exacto solicitado
-            const opcionesFecha = { 
-                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', 
-                hour: 'numeric', minute: 'numeric', hour12: true 
-            };
-            const fechaHora = new Date().toLocaleString('es-MX', opcionesFecha);
+            const promedio = (intentosHechos.reduce((a, b) => a + b, 0) / intentosHechos.length).toFixed(2);
+            cuerpo += `\nPROMEDIO FINAL: ${promedio}/10`;
 
-            // Generación de Hash y Firma (Seguridad)
-            const seed = `${mat}-${notaEscalada}-${Date.now()}`;
-            const hashVerif = btoa(seed).substring(0, 32).toLowerCase();
-            const firmaInteg = btoa(`${nombre}-${mat}-TORO-SYSTEM`).substring(0, 32).toLowerCase();
-
-            // FORMATO SOLICITADO
-            const reporteTxt = `╔═══════════════════════════════════════════════════════╗
-║            REPORTE DE EVALUACIÓN T.O.R.O              ║
-╚═══════════════════════════════════════════════════════╝
-
-[DATOS DEL ESTUDIANTE]
-Matrícula:         ${mat}
-Nombre:            ${nombre}
-Fecha/Hora:        ${fechaHora}
-
-[INFORMACIÓN DE LA ACTIVIDAD]
-Título:            ${leccionActual.titulo || "Actividad del Sistema"}
-Total Preguntas:   ${totalPreguntas}
-Respuestas Correctas: ${aciertosReales}
-Calificación:      ${notaEscalada.toFixed(2)}/10
-Porcentaje:        ${porcentaje}%
-Estado:            ${estado}`;
-
-            // Descarga automática
-            const nombreArchivo = `Reporte_${mat}_${leccionActual.titulo.replace(/\s+/g, '_')}.txt`;
-            descargarArchivoTxt(reporteTxt, nombreArchivo);
-
-            // Finalización visual
-            document.getElementById('actividad-modal').style.display = 'none';
-            guardarResultado(notaEscalada, 10);
-            abrirModal('resultado', notaEscalada);
+            descargarArchivoTxt(cuerpo, `Reporte_${mat}_${leccionActual.titulo.replace(/\s+/g, '_')}.txt`);
+            modal.style.display = 'none';
         };
     }
 }
 
-        // ========== SELECCIONAR RESPUESTA ==========
-        function seleccionarRespuesta(preguntaIndex, opcionIndex, boton) {
-            // remover seleccion previa en esta pregunta
-            const card = boton.closest('.question-card');
-            card.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-            
-            // seleccionar nueva respuesta
-            boton.classList.add('selected');
-            respuestasUsuario[preguntaIndex] = opcionIndex;
-        }
-
-        // ========== FINALIZAR ACTIVIDAD UNIFICADA ==========
-        function finalizarActividad() {
-            const contenedor = document.getElementById('actividad-viewer-content');
-            
-            // DETECTAR QUÉ TIPO DE ACTIVIDAD ES
-            const tieneRadios = contenedor.querySelector('input[type="radio"]');
-            
-            if (tieneRadios) {
-                // ========== ACTIVIDAD HTML (CON RADIO BUTTONS) ==========
-                const tarjetas = contenedor.querySelectorAll('.question-card, .pregunta');
-                const totalPreguntas = tarjetas.length || 2; 
-
-                let aciertosReales = 0;
-                let respondidas = 0;
-
-                for (let i = 1; i <= totalPreguntas; i++) {
-                    const radio = contenedor.querySelector(`input[name="p${i}"]:checked`);
-                    if (radio) {
-                        respondidas++;
-                        if (i === 1 && radio.value === "a") aciertosReales++;
-                        if (i === 2 && radio.value === "b") aciertosReales++;
-                    }
-                }
-
-                if (respondidas < totalPreguntas) {
-                    alert("⚠️ Por favor, responde todas las preguntas.");
-                    return;
-                }
-
-                const notaEscalada = (aciertosReales / totalPreguntas) * 10;
-                const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-                const mat = localStorage.getItem('toro_matricula') || "0000";
-                const ahora = new Date();
-                const timestamp = ahora.getTime(); 
-                const firmaSeguridad = btoa(`${mat}|${notaEscalada}|${timestamp}|TORO_SAFE`);
-
-                const contenidoReporte = `REPORTE TORO
-MATRICULA: ${mat}
-NOMBRE: ${nombre}
-NOTA: ${notaEscalada}/10
-ACIERTOS: ${aciertosReales}/${totalPreguntas}
-FECHA: ${ahora.toLocaleString('es-MX')}
-FIRMA: ${firmaSeguridad}`;
-
-                // Descarga del archivo TXT
-                descargarArchivoTxt(contenidoReporte, `RES_${mat}_${timestamp}.txt`);
-                
-                // Guardar y mostrar resultado
-                guardarResultado(notaEscalada, 10);
-                document.getElementById('actividad-modal').style.display = 'none';
-                abrirModal('resultado', notaEscalada);
-                
-            } else {
-                // ========== ACTIVIDAD PARSEADA (CON BOTONES) ==========
-                const preguntas = leccionActual.actividad.preguntas;
-                
-                // Verificar que todas las preguntas están respondidas
-                if (Object.keys(respuestasUsuario).length !== preguntas.length) {
-                    alert("⚠️ Por favor responde todas las preguntas antes de enviar.");
-                    return;
-                }
-
-                // Calificar
-                let correctas = 0;
-                preguntas.forEach((p, i) => {
-                    if (respuestasUsuario[i] === p.respuestaCorrecta) {
-                        correctas++;
-                    }
-                });
-                
-                // Generar reporte TXT
-                const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-                const mat = localStorage.getItem('toro_matricula') || "0000";
-                const ahora = new Date();
-                const timestamp = ahora.getTime(); 
-                const notaEscalada = (correctas / preguntas.length) * 10;
-                const firmaSeguridad = btoa(`${mat}|${notaEscalada}|${timestamp}|TORO_SAFE`);
-
-                const contenidoReporte = `REPORTE TORO
-MATRICULA: ${mat}
-NOMBRE: ${nombre}
-NOTA: ${notaEscalada.toFixed(1)}/10
-ACIERTOS: ${correctas}/${preguntas.length}
-FECHA: ${ahora.toLocaleString('es-MX')}
-FIRMA: ${firmaSeguridad}`;
-
-                // Descarga del archivo TXT
-                descargarArchivoTxt(contenidoReporte, `RES_${mat}_${timestamp}.txt`);
-                
-                // Guardar resultado
-                guardarResultado(correctas, preguntas.length);
-                
-                // Cerrar actividad y mostrar resultado
-                document.getElementById('actividad-modal').style.display = 'none';
-                abrirModal('resultado', notaEscalada);
-            }
-        }
-
-
-        // ========== GUARDA RESULTADO EN REVISION ==========
-        function guardarResultado(correctas, total) {
-            const resultados = JSON.parse(localStorage.getItem('toro_resultados')) || [];
-            resultados.push({
-                fecha: new Date().toISOString(),
-                leccion: leccionActual.titulo || "Lección Base",
-                correctas: correctas,
-                total: total,
-                porcentaje: Math.round((correctas / total) * 100)
-            });
-            localStorage.setItem('toro_resultados', JSON.stringify(resultados));
-        }
-
-
-        // ========== MODAL (ventan emergente) GENERICA EN REVISION ==========
-       
-     function abrirModal(tipo, puntos = 0) {
-    const modal = document.getElementById('modal-container');
-    const scoreNum = document.getElementById('score-number');
-    const scoreSec = document.getElementById('score-section');
-    const title = document.getElementById('modal-title');
-    const iconDiv = document.getElementById('modal-icon');
-    const modalTxt = document.getElementById('modal-text');
-    
-    modal.style.display = 'flex';
-
-    if (tipo === 'resultado') {
-        const total = 10; // BASE 10 FIJA
-        iconDiv.innerHTML = iconMedal;
-        modalTxt.classList.add('hidden');
-        scoreSec.classList.remove('hidden');
-        
-        scoreNum.innerText = `${puntos}/${total}`;
-        
-        const user = localStorage.getItem('toro_nombre') || "Estudiante";
-        const porcentaje = (puntos / total) * 100;
-        
-        if (porcentaje >= 70) {
-            title.innerText = `¡Excelente trabajo, ${user}!`;
-            scoreNum.className = 'score-value text-green';
-        } else if (porcentaje >= 40) {
-            title.innerText = `¡Buen intento, ${user}!`;
-            scoreNum.className = 'score-value text-orange';
-        } else {
-            title.innerText = `¡Sigue practicando, ${user}!`;
-            scoreNum.className = 'score-value text-red';
-        }
-    } else if (tipo === 'inicio') {
-        iconDiv.innerHTML = iconHand;
-        title.innerText = '¿Te sientes listo?';
-        modalTxt.innerText = 'Una vez que comiences, deberás terminar.';
-        modalTxt.classList.remove('hidden');
-        scoreSec.classList.add('hidden');
-    }
-}
-
-
-
-
-        // ========== PROCESAR HTML IMPORTADO ==========
-        /* importacion
-        function procesarHTML() {
-            const input = document.getElementById('fileInput');
-            if (!input.files[0]) {
-                alert("Por favor selecciona un archivo .html");
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const contenido = e.target.result;
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(contenido, 'text/html');
-                    
-                    const h1 = doc.querySelector('h1');
-                    const tituloExtraido = h1 ? h1.innerText : "Lección sin título";
-                    //inyeccion
-                    const contenidoDiv = doc.querySelector('.leccion-contenido, #contenido');
-                    const actividadDiv = doc.querySelector('.leccion-actividad, #actividad');
-                    
-                    const leccionNueva = {
-                        titulo: tituloExtraido,
-                        html: contenido,
-                        contenido: contenidoDiv ? contenidoDiv.innerHTML : contenido,
-                        actividad: actividadDiv ? parsearActividad(actividadDiv) : null
-                    };
-                    
-                    leccionesMemoria.push(leccionNueva);
-                    localStorage.setItem('toro_lecciones_html', JSON.stringify(leccionesMemoria));
-                    
-                    renderizarLecciones();
-                    
-                    // Limpiar input
-                    input.value = "";
-                    document.getElementById('file-status').innerText = "Lección cargada exitosamente";
-                    document.getElementById('file-status').style.color = '#2e7d32';
-                    
-                    setTimeout(() => {
-                        document.getElementById('file-status').innerText = "Ningún archivo seleccionado";
-                        document.getElementById('file-status').style.color = '#888';
-                    }, 3000);
-                    
-                } catch (error) {
-                    alert("Error al procesar el archivo: " + error.message);
-                    console.error(error);
-                }
-            };
-            reader.readAsText(input.files[0]);
-        }
-
-        */
-
+// ========== PROCESAMIENTO ZIP ==========
 
 async function procesarHTML() {
     const input = document.getElementById('fileInput');
@@ -951,142 +571,52 @@ async function procesarHTML() {
         const arrayBuffer = await file.arrayBuffer();
         const zip = await JSZip.loadAsync(arrayBuffer);
         
-        window.toro_recursos = {}; // Reiniciamos los recursos de esta sesión
+        let htmlOriginal = "";
+        let rutaHtml = "";
+        let intentosTxt = 3;
+        let respuestasTxt = [];
 
         const promesas = [];
         zip.forEach((rutaCompleta, entry) => {
             if (!entry.dir) {
-                const p = entry.async("blob").then(blob => {
-                    // Guardamos la ruta tal cual viene en el ZIP (ej: "ejemplo_actividad/foto.jpg")
+                const p = entry.async("blob").then(async blob => {
                     window.toro_recursos[rutaCompleta] = URL.createObjectURL(blob);
+                    if (rutaCompleta.endsWith('.txt')) {
+                        const texto = await blob.text();
+                        const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
+                        if (mInt) intentosTxt = parseInt(mInt[1]);
+                        const mResp = [...texto.matchAll(/RESPUESTA:\s*([a-c])/g)];
+                        respuestasTxt = mResp.map(m => m[1]);
+                    }
                 });
                 promesas.push(p);
+                if (rutaCompleta.endsWith('.html')) rutaHtml = rutaCompleta;
             }
         });
 
         await Promise.all(promesas);
+        htmlOriginal = await zip.file(rutaHtml).async("string");
 
-        // Buscamos el HTML (esté en la carpeta que esté)
-        const rutaHtml = Object.keys(zip.files).find(n => n.endsWith('.html'));
-        const htmlOriginal = await zip.file(rutaHtml).async("string");
-
-        // Guardamos la lección
         const leccionNueva = {
             titulo: file.name.replace('.zip', ''),
             html: htmlOriginal, 
-            rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1) // Guardamos la carpeta base
+            rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1),
+            intentosMax: intentosTxt,
+            respuestasCorrectas: respuestasTxt
         };
 
         leccionesMemoria.push(leccionNueva);
         localStorage.setItem('toro_lecciones_html', JSON.stringify(leccionesMemoria));
         renderizarLecciones();
-        alert("✅ Importado: " + leccionNueva.titulo);
+        alert(`✅ Importado: ${leccionNueva.titulo}`);
 
     } catch (e) {
         console.error(e);
-        alert("Error procesando la estructura del ZIP");
+        alert("Error procesando el ZIP");
     }
 }
 
-
-
-
-
-
-
-
-        // ========== PARSEAR ACTIVIDAD () ==========
-        function parsearActividad(actividadDiv) {
-            // Esta función intenta extraer preguntas del HTML
-            // Debe adaptarse según la estructura real de tus HTMLs
-            const preguntas = [];
-            const preguntasElements = actividadDiv.querySelectorAll('.pregunta, .question');
-            
-            preguntasElements.forEach(p => {
-                const texto = p.querySelector('.texto-pregunta, h4, p')?.innerText;
-                const opciones = Array.from(p.querySelectorAll('.opcion, li')).map(o => o.innerText);
-                const respuesta = parseInt(p.dataset.respuesta || 0);
-                
-                if (texto && opciones.length > 0) {
-                    preguntas.push({
-                        pregunta: texto,
-                        opciones: opciones,
-                        respuestaCorrecta: respuesta
-                    });
-                }
-            });
-            
-            return preguntas.length > 0 ? { preguntas } : null;
-        }
-
-        // ========== CERRAR SESIÓN ==========
-        //Elimina las leccione que se subiern
-        function cerrarSesion() {
-            if(confirm("¿Estás seguro? Se eliminarán tus datos y lecciones importadas.")){
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
-        // ========== PANTALLA DE LOGIN ==========
-        function mostrarLogin() {
-            document.getElementById('main-content').innerHTML = `
-                <div class="login-container">
-                    <p style="color: #666; font-size: 18px; margin-bottom: 5px; font-weight: 500;">
-                        Te damos la bienvenida al sistema
-                    </p>
-                    
-                    <h1 style="font-size: 3rem; color: var(--dark-green); font-weight: 900; letter-spacing: 3px; margin: 0 0 10px 0;">T.O.R.O</h1>
-                    
-                    <img src="assets/logo_toro.png" 
-                         alt="Logo TORO" 
-                         style="width: 180px; height: auto; margin-bottom: 2rem;"
-                         onerror="this.style.display='none'">
-
-                    <form id="loginForm" style="width: 100%; max-width: 400px;">
-                        <div style="text-align: left; margin-bottom: 1.5rem;">
-                            <label style="font-weight: bold;">Matrícula</label>
-                            <input type="text" id="matricula" placeholder="EJ. 012203432" required 
-                                   style="width: 100%; padding: 1rem; border: 1.5px solid #ccc; border-radius: 15px; box-sizing: border-box; font-size: 16px;">
-                        </div>
-                        <div style="text-align: left; margin-bottom: 1.5rem;">
-                            <label style="font-weight: bold;">Nombre completo</label>
-                            <input type="text" id="nombre" placeholder="EJ. Juan Pérez" required 
-                                   style="width: 100%; padding: 1rem; border: 1.5px solid #ccc; border-radius: 15px; box-sizing: border-box; font-size: 16px;">
-                        </div>
-                        <button type="submit" style="width: 100%; padding: 1.1rem; background-color: #689F38; color: white; border: none; border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer;">
-                            Continuar
-                        </button>
-                    </form>
-                </div>
-            `;
-            
-            document.getElementById('loginForm')?.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const nom = document.getElementById('nombre').value.trim();
-                const mat = document.getElementById('matricula').value.trim();
-                
-                if (!nom || !mat) {
-                    alert("Por favor completa todos los campos");
-                    return;
-                }
-                
-                localStorage.setItem('toro_nombre', nom);
-                localStorage.setItem('toro_matricula', mat);
-                localStorage.setItem('toro_datos_listos', 'true');
-                mostrarVistaEstudiante(nom);
-            });
-        }
-
-        // ========== INICIALIZACIÓN ==========
-        window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('toro_datos_listos') === 'true') {
-                mostrarVistaEstudiante(localStorage.getItem('toro_nombre'));
-            } else {
-                mostrarLogin();
-            }
-        });
-
+// ========== UTILIDADES ==========
 
 function descargarArchivoTxt(contenido, nombreArchivo) {
     const elemento = document.createElement('a');
@@ -1098,6 +628,48 @@ function descargarArchivoTxt(contenido, nombreArchivo) {
     document.body.removeChild(elemento);
 }
 
+function volverALeccion() {
+    document.getElementById('modal-container').style.display = 'none';
+}
+
+function cerrarSesion() {
+    if(confirm("¿Estás seguro? Se eliminarán tus datos y lecciones importadas.")){
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+function mostrarLogin() {
+    document.getElementById('main-content').innerHTML = `
+        <div class="login-container">
+            <h1 style="font-size: 3rem; color: #33691E; font-weight: 900;">T.O.R.O</h1>
+            <form id="loginForm">
+                <input type="text" id="matricula" placeholder="Matrícula" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:10px; border:1px solid #ccc;">
+                <input type="text" id="nombre" placeholder="Nombre completo" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:10px; border:1px solid #ccc;">
+                <button type="submit" class="btn-toro" style="background:#689F38; color:white; width:100%;">Continuar</button>
+            </form>
+        </div>
+    `;
+    document.getElementById('loginForm').onsubmit = (e) => {
+        e.preventDefault();
+        const nom = document.getElementById('nombre').value;
+        const mat = document.getElementById('matricula').value;
+        localStorage.setItem('toro_nombre', nom);
+        localStorage.setItem('toro_matricula', mat);
+        localStorage.setItem('toro_datos_listos', 'true');
+        mostrarVistaEstudiante(nom);
+    };
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('toro_datos_listos') === 'true') {
+        mostrarVistaEstudiante(localStorage.getItem('toro_nombre'));
+    } else {
+        mostrarLogin();
+    }
+});
     </script>
+
+    
 </body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toro-v38';
+const CACHE_NAME = 'toro-v40';
 const assets = [
   './',
   './index.html',
