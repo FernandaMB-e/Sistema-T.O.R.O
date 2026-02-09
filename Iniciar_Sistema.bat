@@ -29,7 +29,7 @@ echo.
 :: 2. Abrir el navegador para el profesor
 start http://localhost:5000
 
-:: 3. Ejecutar el servidor
-node server.js
+:: Ejecutar el servidor ocultando los logs de peticiones
+node server.js > nul
 
 pause
