@@ -9,14 +9,7 @@ const PORT = 5000;
 const baseDir = process.cwd();
 
 // Middleware de Logs
-app.use((req, res, next) => {
-    const start = Date.now();
-    res.on('finish', () => {
-        const duration = Date.now() - start;
-        console.log(`${req.method} ${req.originalUrl} - [${res.statusCode}] - ${duration}ms`);
-    });
-    next();
-});
+
 
 // Servir archivos estáticos desde la carpeta actual de la USB
 app.use(express.static(baseDir));
