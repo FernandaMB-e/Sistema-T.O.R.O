@@ -1,8 +1,12 @@
 const express = require('express');
 const path = require('path');
-const os = require('os'); // Nuevo: para detectar tu IP real
+const os = require('os'); 
 const app = express();
 const PORT = 5000;
+
+// DETERMINAR RUTA DE ARCHIVOS (Crucial para el .exe)
+// process.cwd() obliga al .exe a buscar los archivos en la carpeta de la USB
+const baseDir = process.cwd();
 
 // Middleware de Logs
 app.use((req, res, next) => {
@@ -14,8 +18,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Servir archivos estáticos
-app.use(express.static(path.join(__dirname, './')));
+// Servir archivos estáticos desde la carpeta actual de la USB
+app.use(express.static(baseDir));
 
 // Función para obtener la IP de tu PC en la red local
 function getLocalIp() {
@@ -33,10 +37,12 @@ function getLocalIp() {
 const LAN_IP = getLocalIp();
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log('====================================');
-    console.log('   SISTEMA T.O.R.O. - SERVIDOR LAN');
-    console.log('====================================');
-    console.log(`💻 Local:   http://localhost:${PORT}`);
-    console.log(`📱 Alumnos: http://${LAN_IP}:${PORT}`); // <--- ESTA ES LA IP QUE DEBES PONER EN EL CELULAR
-    console.log('====================================');
+    console.log('======================================================');
+    console.log('         SISTEMA T.O.R.O. - SERVIDOR LAN ACTIVO');
+    console.log('======================================================');
+    console.log('');
+    console.log(' [MENSAJE PARA ALUMNOS]:');
+    console.log(` "Conectense a la red y entren a: http://${LAN_IP}:${PORT}"`);
+    console.log('======================================================');
+    console.log(' No cierre esta ventana mientras use el sistema.');
 });
