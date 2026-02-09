@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -13,38 +14,42 @@
             --dark-green: #2E7D32;
             --bg-light: #F8F9FA;
             --modal-blue: #2b59a2;
-            --color-header-text: #1a8f3d; 
+            --color-header-text: #1a8f3d;
             --color-text-blue: #3b5998;
             --bg-lesson-container: #dcece2;
             --border-lesson-container: #8ebf9e;
             --btn-green-bg: #619b6b;
             --btn-gray-bg: #637388;
         }
-        * { box-sizing: border-box; }
-        body { 
-            background-color: var(--bg-light); 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
             padding: 0;
         }
-        
-        .login-container { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 2rem; 
-            text-align: center; 
+
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
             min-height: 100vh;
         }
 
         .mobile-container {
-            background-color: white; 
-            width: 100%; 
+            background-color: white;
+            width: 100%;
             max-width: 380px;
-            border-radius: 20px; 
-            padding: 30px 20px; 
+            border-radius: 20px;
+            padding: 30px 20px;
             margin: 20px auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
 
@@ -56,151 +61,185 @@
             gap: 6px;
             color: #444;
         }
-        .welcome-text { font-size: 18px; font-weight: 400; }
-        .user-name { font-size: 18px; font-weight: 700; }
 
-        .course-title-container { margin-bottom: 30px; }
-        .course-label { 
-            font-size: 11px; 
-            color: #aaa; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            display: block; 
-            margin-bottom: 6px; 
-        }
-        .course-name { 
-            color: var(--dark-green); 
-            font-size: 22px; 
-            font-weight: 800; 
-            display: inline-block; 
-        }
-        .thin-line { 
-            border: 0; 
-            height: 1px; 
-            background: #e0e0e0; 
-            width: 80%; 
-            margin: 12px auto 0; 
+        .welcome-text {
+            font-size: 18px;
+            font-weight: 400;
         }
 
-        .lesson-container { 
-            background: var(--bg-lesson-container); 
-            border: 1px solid var(--border-lesson-container); 
-            border-radius: 20px; 
-            padding: 25px 15px; 
-            margin-bottom: 10px; 
+        .user-name {
+            font-size: 18px;
+            font-weight: 700;
         }
-        .lesson-card { 
-            background: white; 
-            border-radius: 10px; 
-            padding: 12px 15px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            cursor: pointer; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+
+        .course-title-container {
+            margin-bottom: 30px;
+        }
+
+        .course-label {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .course-name {
+            color: var(--dark-green);
+            font-size: 22px;
+            font-weight: 800;
+            display: inline-block;
+        }
+
+        .thin-line {
+            border: 0;
+            height: 1px;
+            background: #e0e0e0;
+            width: 80%;
+            margin: 12px auto 0;
+        }
+
+        .lesson-container {
+            background: var(--bg-lesson-container);
+            border: 1px solid var(--border-lesson-container);
+            border-radius: 20px;
+            padding: 25px 15px;
+            margin-bottom: 10px;
+        }
+
+        .lesson-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             margin-bottom: 10px;
             transition: transform 0.2s;
         }
+
         .lesson-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        
-        .upload-area { 
-            border: 2px dashed #ccc; 
-            border-radius: 15px; 
-            padding: 20px; 
-            margin: 15px 0; 
-            background: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-        }
-        .info-text { 
-            font-size: 12px; 
-            color: #666; 
-            margin: 15px 0 5px 0; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .test-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
-            margin: 15px 0; 
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .btn-test { 
-            background: white; 
-            border: 1px solid #ddd; 
-            padding: 10px; 
-            border-radius: 15px; 
-            font-size: 12px; 
-            cursor: pointer; 
+
+        .info-text {
+            font-size: 12px;
+            color: #666;
+            margin: 15px 0 5px 0;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .btn-test {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
             color: #333;
             transition: all 0.2s;
         }
+
         .btn-test:hover {
             background: #f0f0f0;
             border-color: #999;
         }
 
-        .modal-overlay { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.7); 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 1000; 
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
-        .modal-content { 
-            background: white; 
-            width: 90%; 
-            max-width: 350px; 
-            border-radius: 25px; 
-            overflow: hidden; 
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 350px;
+            border-radius: 25px;
+            overflow: hidden;
             text-align: center;
             max-height: 90vh;
             overflow-y: auto;
         }
-        .modal-header { 
-            padding: 30px 20px; 
-            color: white; 
-            background-color: var(--modal-blue); 
+
+        .modal-header {
+            padding: 30px 20px;
+            color: white;
+            background-color: var(--modal-blue);
         }
-        .score-value { 
-            font-size: 3.5rem; 
-            font-weight: 900; 
-            margin: 10px 0; 
+
+        .score-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin: 10px 0;
         }
-        .text-green { color: #2e7d32; } 
-        .text-orange { color: #f9a825; } 
-        .text-red { color: #c62828; }
-        .hidden { display: none; }
-        
-        .btn-toro { 
-            border: none; 
-            padding: 12px; 
-            border-radius: 25px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            width: 100%; 
-            color: white; 
+
+        .text-green {
+            color: #2e7d32;
+        }
+
+        .text-orange {
+            color: #f9a825;
+        }
+
+        .text-red {
+            color: #c62828;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .btn-toro {
+            border: none;
+            padding: 12px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            color: white;
             margin-bottom: 10px;
             transition: opacity 0.2s;
         }
+
         .btn-toro:hover {
             opacity: 0.9;
         }
-        
-        #lesson-viewer-content, 
-        #actividad-viewer-content { 
-            padding: 20px; 
-            text-align: left; 
-            max-height: 60vh; 
-            overflow-y: auto; 
+
+        #lesson-viewer-content,
+        #actividad-viewer-content {
+            padding: 20px;
+            text-align: left;
+            max-height: 60vh;
+            overflow-y: auto;
         }
 
         .question-card {
@@ -223,10 +262,12 @@
             text-align: left;
             transition: all 0.2s;
         }
+
         .option-btn:hover {
             background: #f0f0f0;
             border-color: var(--modal-blue);
         }
+
         .option-btn.selected {
             background: #e3f2fd;
             border-color: var(--modal-blue);
@@ -238,11 +279,13 @@
             margin: 10px 0;
             text-align: center;
         }
+
         .alert-error {
             background: #ffebee;
             color: #c62828;
             border: 1px solid #ef9a9a;
         }
+
         .alert-success {
             background: #e8f5e9;
             color: #2e7d32;
@@ -250,55 +293,60 @@
         }
     </style>
 </head>
+
 <body>
 
     <div id="main-content"></div>
 
     <!-- Modal de confirmación/resultado -->
-   <div id="modal-container" class="modal-overlay">
-    <div class="modal-content" style="border-radius: 30px; overflow: hidden; border: none; max-width: 450px;">
-        
-        <div id="modal-header-bg" class="modal-header" style="background-color: #2b59a2; padding: 40px 20px; text-align: center; color: white;">
-            <div id="modal-icon" style="margin-bottom: 15px; font-size: 3rem;">
-                <i class="fas fa-award"></i> 
-            </div>
-            <h2 id="modal-title" style="font-size: 1.6rem; margin: 0; font-weight: 600; line-height: 1.2;"></h2>
-        </div>
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content" style="border-radius: 30px; overflow: hidden; border: none; max-width: 450px;">
 
-        <div class="modal-body" style="padding: 30px; text-align: center;">
-            
-            <div id="score-section" class="hidden">
-                <p style="color: #888; margin: 0; font-size: 1.1rem;">Puntaje obtenido:</p>
-                <div id="score-number" style="font-size: 5rem; font-weight: 900; margin: 5px 0; line-height: 1;"></div>
-                <p id="intentos-info" style="color: #444; margin-top: 10px; font-size: 0.95rem;"></p>
+            <div id="modal-header-bg" class="modal-header"
+                style="background-color: #2b59a2; padding: 40px 20px; text-align: center; color: white;">
+                <div id="modal-icon" style="margin-bottom: 15px; font-size: 3rem;">
+                    <i class="fas fa-award"></i>
+                </div>
+                <h2 id="modal-title" style="font-size: 1.6rem; margin: 0; font-weight: 600; line-height: 1.2;"></h2>
             </div>
 
-            <p id="modal-text-inicio" style="color: #555; font-size: 1.1rem; margin-bottom: 20px;"></p>
-            <p id="modal-text" class="hidden"></p>
+            <div class="modal-body" style="padding: 30px; text-align: center;">
 
-            <div id="modal-footer-btns" style="display: flex; gap: 15px; margin-top: 25px;">
-                <button id="btn-izq" class="btn-toro" 
-                        style="background-color: #637388; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;" 
+                <div id="score-section" class="hidden">
+                    <p style="color: #888; margin: 0; font-size: 1.1rem;">Puntaje obtenido:</p>
+                    <div id="score-number" style="font-size: 5rem; font-weight: 900; margin: 5px 0; line-height: 1;">
+                    </div>
+                    <p id="intentos-info" style="color: #444; margin-top: 10px; font-size: 0.95rem;"></p>
+                </div>
+
+                <p id="modal-text-inicio" style="color: #555; font-size: 1.1rem; margin-bottom: 20px;"></p>
+                <p id="modal-text" class="hidden"></p>
+
+                <div id="modal-footer-btns" style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button id="btn-izq" class="btn-toro"
+                        style="background-color: #637388; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;"
                         onclick="volverALeccion()">
-                    Volver
-                </button>
-                
-                <button id="btn-der" class="btn-toro" 
-                        style="background-color: #619b6b; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;" 
+                        Volver
+                    </button>
+
+                    <button id="btn-der" class="btn-toro"
+                        style="background-color: #619b6b; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;"
                         onclick="aceptarEIrAActividad()">
-                    Aceptar
-                </button>
+                        Aceptar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
     <!-- Modal de contenido-->
     <div id="lesson-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 90%;">
             <div id="lesson-viewer-content"></div>
             <p class="info-text" style="margin-bottom: 5px;">"Pulsa para ir a la actividad calificable"</p>
-            <button class="btn-toro" style="background: var(--btn-green-bg); width: 80%; margin: 15px auto; display: block;" onclick="iniciarActividadDesdeLeccion()">Continuar a Actividad</button>
+            <button class="btn-toro"
+                style="background: var(--btn-green-bg); width: 80%; margin: 15px auto; display: block;"
+                onclick="iniciarActividadDesdeLeccion()">Continuar a Actividad</button>
         </div>
     </div>
 
@@ -309,7 +357,9 @@
                 <h2 style="text-align: center; color: var(--modal-blue); margin-top: 20px;">Actividad en curso</h2>
                 <p style="text-align: center; color: #888;">Cargando actividad...</p>
             </div>
-            <button class="btn-toro" id="btn-finalizar-actividad" style="background: var(--btn-gray-bg); width: 80%; margin: 15px auto; display: block;" onclick="finalizarActividad()">Enviar Respuestas</button>
+            <button class="btn-toro" id="btn-finalizar-actividad"
+                style="background: var(--btn-gray-bg); width: 80%; margin: 15px auto; display: block;"
+                onclick="finalizarActividad()">Enviar Respuestas</button>
         </div>
     </div>
 
@@ -319,23 +369,126 @@
 
     <script>
         //============== SERVIDOR SW =====================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log(' Service Worker registrado:', reg.scope))
-            .catch(err => console.error(' Error al registrar SW:', err));
-    });
-}
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log(' Service Worker registrado:', reg.scope))
+                    .catch(err => console.error(' Error al registrar SW:', err));
+            });
+        }
 
-// ========== VARIABLES GLOBALES ==========
-let leccionesMemoria = JSON.parse(localStorage.getItem('toro_lecciones_html')) || [];
-let leccionActual = null;
-window.toro_recursos = {}; // Almacena los Blobs de imágenes
+        // ========== VARIABLES GLOBALES ==========
+        let leccionesMemoria = JSON.parse(localStorage.getItem('toro_lecciones_html')) || [];
+        let leccionActual = null;
+        window.toro_recursos = {}; 
 
-// ========== VISTA ESTUDIANTE ==========
-function mostrarVistaEstudiante(nombre) {
-    const root = document.getElementById('main-content');
-    root.innerHTML = `
+        // ========== INDEXEDDB CONFIGURACION ==========
+        let db;
+
+        function inicializarDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('ToroDatabase', 1);
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+
+                    // Tabla de lecciones por matrícula
+                    if (!db.objectStoreNames.contains('lecciones')) {
+                        const leccionesStore = db.createObjectStore('lecciones', { keyPath: 'id', autoIncrement: true });
+                        leccionesStore.createIndex('matricula', 'matricula', { unique: false });
+                    }
+
+                    // Tabla de historial de intentos
+                    if (!db.objectStoreNames.contains('historial')) {
+                        const historialStore = db.createObjectStore('historial', { keyPath: 'id', autoIncrement: true });
+                        historialStore.createIndex('matricula_leccion', ['matricula', 'leccionTitulo'], { unique: false });
+                    }
+                };
+            });
+        }
+
+        function guardarLeccionDB(matricula, leccion) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['lecciones'], 'readwrite');
+                const store = transaction.objectStore('lecciones');
+
+                const data = {
+                    matricula: matricula,
+                    titulo: leccion.titulo,
+                    html: leccion.html,
+                    rutaBase: leccion.rutaBase,
+                    intentosMax: leccion.intentosMax,
+                    respuestasCorrectas: leccion.respuestasCorrectas,
+                    fechaImportacion: new Date().toISOString()
+                };
+
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+
+        // cargar lecciones de una matrícula
+        function cargarLeccionesDB(matricula) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['lecciones'], 'readonly');
+                const store = transaction.objectStore('lecciones');
+                const index = store.index('matricula');
+                const request = index.getAll(matricula);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // guardar intento de calificación
+        function guardarIntentoDB(matricula, leccionTitulo, calificacion) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['historial'], 'readwrite');
+                const store = transaction.objectStore('historial');
+
+                const data = {
+                    matricula: matricula,
+                    leccionTitulo: leccionTitulo,
+                    calificacion: calificacion,
+                    fecha: new Date().toISOString()
+                };
+
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // obtenr intentos realizados
+        function obtenerIntentosDB(matricula, leccionTitulo) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['historial'], 'readonly');
+                const store = transaction.objectStore('historial');
+                const index = store.index('matricula_leccion');
+                const request = index.getAll([matricula, leccionTitulo]);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // ========== VISTA ESTUDIANTE ==========
+        async function mostrarVistaEstudiante(nombre) {
+            const matricula = localStorage.getItem('toro_matricula');
+
+            // Cargar lecciones desde IndexedDB
+            leccionesMemoria = await cargarLeccionesDB(matricula);
+
+            const root = document.getElementById('main-content');
+            root.innerHTML = `
         <div class="mobile-container">
             <div class="welcome-box">
                 <span class="welcome-text">¡Hola!</span>
@@ -368,288 +521,344 @@ function mostrarVistaEstudiante(nombre) {
             <button class="btn-toro" style="background: var(--btn-gray-bg);" onclick="cerrarSesion()">Cambiar de usuario</button>
         </div>
     `;
-    renderizarLecciones();
-}
-
-function actualizarNombreArchivo(input) {
-    const statusDiv = document.getElementById('file-status');
-    if (input.files[0]) {
-        statusDiv.innerText = ` ${input.files[0].name}`;
-        statusDiv.style.color = '#2e7d32';
-    }
-}
-
-function renderizarLecciones() {
-    const contenedor = document.getElementById('contenedor-lecciones');
-    if (!contenedor) return;
-    contenedor.innerHTML = ""; // Limpiar antes de renderizar
-
-    leccionesMemoria.forEach((lec, index) => {
-        const card = document.createElement('div');
-        card.className = 'lesson-card';
-        card.onclick = () => verLeccionImportada(index);
-        card.innerHTML = `
-            <span>📖 ${lec.titulo}</span> 
-            <div style="height: 10px; width: 10px; background-color: var(--modal-blue); border-radius: 50%;"></div>
-        `;
-        contenedor.appendChild(card);
-    });
-}
-
-function verLeccionImportada(index) {
-    const leccion = leccionesMemoria[index];
-    leccionActual = leccion;
-
-    const contenedor = document.getElementById('lesson-viewer-content');
-    contenedor.innerHTML = leccion.html;
-
-    // Reparar imágenes
-    const imagenes = contenedor.querySelectorAll('img');
-    imagenes.forEach(img => {
-        const srcOriginal = img.getAttribute('src');
-        const nombreLimpio = srcOriginal.replace('./', ''); 
-        const rutaConCarpeta = leccion.rutaBase + nombreLimpio;
-        const blobUrl = window.toro_recursos[nombreLimpio] || 
-                        window.toro_recursos[rutaConCarpeta] || 
-                        window.toro_recursos[srcOriginal];
-
-        if (blobUrl) img.src = blobUrl;
-    });
-
-    document.getElementById('lesson-modal').style.display = 'flex';
-}
-
-// ========== FLUJO DE ACTIVIDAD ==========
-
-function iniciarActividadDesdeLeccion() {
-    document.getElementById('lesson-modal').style.display = 'none';
-    abrirModal('inicio');
-}
-
-function aceptarEIrAActividad() {
-    document.getElementById('modal-container').style.display = 'none';
-    if (leccionActual && leccionActual.html) {
-        mostrarActividad();
-    } else {
-        alert("Error: No se encontró el contenido de la actividad.");
-    }
-}
-
-function mostrarActividad() {
-    const contenedor = document.getElementById('actividad-viewer-content');
-    document.getElementById('actividad-modal').style.display = 'flex';
-    document.getElementById('actividad-modal').scrollTop = 0;
-
-    contenedor.innerHTML = leccionActual.html;
-
-    // 1. Reparar Imágenes en el modal de actividad
-    const imagenes = contenedor.querySelectorAll('img');
-    imagenes.forEach(img => {
-        const srcOriginal = img.getAttribute('src');
-        const nombreLimpio = srcOriginal.replace('./', ''); 
-        const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
-        const blobUrl = window.toro_recursos[nombreLimpio] || window.toro_recursos[rutaConCarpeta];
-        if (blobUrl) img.src = blobUrl;
-    });
-
-    // 2. Saltar directamente al cuestionario
-    const secLectura = contenedor.querySelector('#lectura');
-    const secQuiz = contenedor.querySelector('#quiz');
-    const tabsProfesor = contenedor.querySelector('.tabs');
-    if (secLectura) secLectura.style.display = 'none';
-    if (tabsProfesor) tabsProfesor.style.display = 'none';
-    if (secQuiz) {
-        secQuiz.style.display = 'block';
-        secQuiz.classList.add('active');
-    }
-
-    // 3. Ocultar botón verde original del profesor
-    const btnProfesor = contenedor.querySelector('.btn');
-    if (btnProfesor) btnProfesor.style.display = 'none';
-
-    // 4. Configurar el botón GRIS (Finalizar Actividad)
-    const btnToro = document.getElementById('btn-finalizar-actividad');
-    btnToro.onclick = function() {
-        const respuestasProfe = leccionActual.respuestasCorrectas || [];
-        let aciertos = 0;
-        let respondidas = 0;
-
-        respuestasProfe.forEach((res, i) => {
-            const radio = contenedor.querySelector(`input[name="p${i+1}"]:checked`);
-            if (radio) {
-                respondidas++;
-                if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
-            }
-        });
-
-        if (respondidas < respuestasProfe.length) {
-            alert("⚠️ Por favor, responde todas las preguntas antes de finalizar.");
-            return;
+            renderizarLecciones();
         }
 
-        const notaFinal = (aciertos / respuestasProfe.length) * 10;
-        
-        // Guardar en historial
-        let historial = JSON.parse(localStorage.getItem('toro_historial')) || {};
-        if (!historial[leccionActual.titulo]) historial[leccionActual.titulo] = [];
-        historial[leccionActual.titulo].push(notaFinal);
-        localStorage.setItem('toro_historial', JSON.stringify(historial));
+        function actualizarNombreArchivo(input) {
+            const statusDiv = document.getElementById('file-status');
+            if (input.files[0]) {
+                statusDiv.innerText = ` ${input.files[0].name}`;
+                statusDiv.style.color = '#2e7d32';
+            }
+        }
 
-        document.getElementById('actividad-modal').style.display = 'none';
-        abrirModal('resultado', notaFinal);
-    };
-}
+        async function renderizarLecciones() {
+            const contenedor = document.getElementById('contenedor-lecciones');
+            if (!contenedor) return;
+            contenedor.innerHTML = "";
 
-// ========== SISTEMA DE MODALES UNIFICADO ==========
+            const matricula = localStorage.getItem('toro_matricula');
 
-function abrirModal(tipo, puntos = 0) {
-    const modal = document.getElementById('modal-container');
-    const title = document.getElementById('modal-title');
-    const scoreNum = document.getElementById('score-number');
-    const scoreSec = document.getElementById('score-section');
-    const intentosInfo = document.getElementById('intentos-info');
-    const modalTextInicio = document.getElementById('modal-text-inicio');
-    const btnIzq = document.getElementById('btn-izq');
-    const btnDer = document.getElementById('btn-der');
-    
-    modal.style.display = 'flex';
+            for (let index = 0; index < leccionesMemoria.length; index++) {
+                const lec = leccionesMemoria[index];
 
-    const historial = JSON.parse(localStorage.getItem('toro_historial')) || {};
-    const intentosHechos = (historial[leccionActual.titulo] || []);
-    const limiteMax = leccionActual.intentosMax || 3;
-    const restantes = limiteMax - intentosHechos.length;
+                // Obtener intentos realizados
+                const intentos = await obtenerIntentosDB(matricula, lec.titulo);
+                const intentosRestantes = (lec.intentosMax || 3) - intentos.length;
 
-    if (tipo === 'inicio') {
-        title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
-        scoreSec.classList.add('hidden');
-        modalTextInicio.classList.remove('hidden');
-        modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver atrás.`;
-        
-        btnIzq.innerText = "Volver";
-        btnIzq.onclick = () => { modal.style.display = 'none'; };
-        btnDer.innerText = "Aceptar";
-        btnDer.onclick = () => { aceptarEIrAActividad(); };
+                const card = document.createElement('div');
+                card.className = 'lesson-card';
 
-    } else if (tipo === 'resultado') {
-        const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-        title.innerText = `¡${puntos >= 6 ? 'Buen trabajo' : 'Puedes mejorar'}, ${nombre}!`;
-        
-        scoreSec.classList.remove('hidden');
-        modalTextInicio.classList.add('hidden');
-        
-        scoreNum.innerText = `${puntos.toFixed(1)}/10`;
-        scoreNum.style.color = puntos >= 6 ? '#2e7d32' : '#c62828';
-        intentosInfo.innerHTML = `Número de intentos disponibles: <span style="color: #2e7d32; font-weight: bold;">${restantes}</span>`;
+                if (intentosRestantes > 0) {
+                    card.onclick = () => verLeccionImportada(index);
+                    card.style.cursor = 'pointer';
+                } else {
+                    card.style.opacity = '0.5';
+                    card.style.cursor = 'not-allowed';
+                    card.title = 'Sin intentos disponibles';
+                }
 
-        btnIzq.innerText = "Reintentar";
-        btnIzq.style.display = restantes > 0 ? "block" : "none";
-        btnIzq.onclick = () => { abrirModal('inicio'); };
-        
-        btnDer.innerText = "Finalizar";
-        btnDer.onclick = () => {
-            const mat = localStorage.getItem('toro_matricula') || "0000";
-            let cuerpo = `REPORTE CONSOLIDADO T.O.R.O\n\nESTUDIANTE: ${nombre}\nMATRÍCULA: ${mat}\nLECCIÓN: ${leccionActual.titulo}\n\n`;
-            intentosHechos.forEach((nota, i) => cuerpo += `Intento ${i + 1}: ${nota.toFixed(1)}/10\n`);
-            
-            const promedio = (intentosHechos.reduce((a, b) => a + b, 0) / intentosHechos.length).toFixed(2);
-            cuerpo += `\nPROMEDIO FINAL: ${promedio}/10`;
+                card.innerHTML = `
+            <span>📖 ${lec.titulo}</span> 
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11px; color: ${intentosRestantes > 0 ? '#2e7d32' : '#c62828'};">
+                    ${intentosRestantes}/${lec.intentosMax || 3} intentos
+                </span>
+                <div style="height: 10px; width: 10px; background-color: ${intentosRestantes > 0 ? 'var(--modal-blue)' : '#999'}; border-radius: 50%;"></div>
+            </div>
+        `;
+                contenedor.appendChild(card);
+            }
+        }
 
-            descargarArchivoTxt(cuerpo, `Reporte_${mat}_${leccionActual.titulo.replace(/\s+/g, '_')}.txt`);
-            modal.style.display = 'none';
-        };
-    }
-}
+        function verLeccionImportada(index) {
+            const leccion = leccionesMemoria[index];
+            leccionActual = leccion;
 
-// ========== PROCESAMIENTO ZIP ==========
+            const contenedor = document.getElementById('lesson-viewer-content');
+            contenedor.innerHTML = leccion.html;
 
-async function procesarHTML() {
-    const input = document.getElementById('fileInput');
-    if (!input.files[0]) return;
+            // Reparar imágenes
+            const imagenes = contenedor.querySelectorAll('img');
+            imagenes.forEach(img => {
+                const srcOriginal = img.getAttribute('src');
+                const nombreLimpio = srcOriginal.replace('./', '');
+                const rutaConCarpeta = leccion.rutaBase + nombreLimpio;
+                const blobUrl = window.toro_recursos[nombreLimpio] ||
+                    window.toro_recursos[rutaConCarpeta] ||
+                    window.toro_recursos[srcOriginal];
 
-    try {
-        const file = input.files[0];
-        const arrayBuffer = await file.arrayBuffer();
-        const zip = await JSZip.loadAsync(arrayBuffer);
-        
-        let htmlOriginal = "";
-        let rutaHtml = "";
-        let intentosTxt = 3;
-        let respuestasTxt = [];
+                if (blobUrl) img.src = blobUrl;
+            });
 
-        const promesas = [];
-        zip.forEach((rutaCompleta, entry) => {
-            if (!entry.dir) {
-                const p = entry.async("blob").then(async blob => {
-                    window.toro_recursos[rutaCompleta] = URL.createObjectURL(blob);
-                    if (rutaCompleta.endsWith('.txt')) {
-                        const texto = await blob.text();
-                        const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
-                        if (mInt) intentosTxt = parseInt(mInt[1]);
-                        const mResp = [...texto.matchAll(/RESPUESTA:\s*([a-c])/g)];
-                        respuestasTxt = mResp.map(m => m[1]);
+            document.getElementById('lesson-modal').style.display = 'flex';
+        }
+
+        // ========== FLUJO DE ACTIVIDAD ==========
+
+        function iniciarActividadDesdeLeccion() {
+            document.getElementById('lesson-modal').style.display = 'none';
+            abrirModal('inicio');
+        }
+
+        function aceptarEIrAActividad() {
+            document.getElementById('modal-container').style.display = 'none';
+            if (leccionActual && leccionActual.html) {
+                mostrarActividad();
+            } else {
+                alert("Error: No se encontró el contenido de la actividad.");
+            }
+        }
+
+        function mostrarActividad() {
+            const contenedor = document.getElementById('actividad-viewer-content');
+            document.getElementById('actividad-modal').style.display = 'flex';
+            document.getElementById('actividad-modal').scrollTop = 0;
+
+            contenedor.innerHTML = leccionActual.html;
+
+            const imagenes = contenedor.querySelectorAll('img');
+            imagenes.forEach(img => {
+                const srcOriginal = img.getAttribute('src');
+                const nombreLimpio = srcOriginal.replace('./', '');
+                const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
+                const blobUrl = window.toro_recursos[nombreLimpio] || window.toro_recursos[rutaConCarpeta];
+                if (blobUrl) img.src = blobUrl;
+            });
+
+            const secLectura = contenedor.querySelector('#lectura');
+            const secQuiz = contenedor.querySelector('#quiz');
+            const tabsProfesor = contenedor.querySelector('.tabs');
+            if (secLectura) secLectura.style.display = 'none';
+            if (tabsProfesor) tabsProfesor.style.display = 'none';
+            if (secQuiz) {
+                secQuiz.style.display = 'block';
+                secQuiz.classList.add('active');
+            }
+
+            const btnProfesor = contenedor.querySelector('.btn');
+            if (btnProfesor) btnProfesor.style.display = 'none';
+
+            const btnToro = document.getElementById('btn-finalizar-actividad');
+            btnToro.onclick = async function () {
+                const matricula = localStorage.getItem('toro_matricula');
+                const respuestasProfe = leccionActual.respuestasCorrectas || [];
+                let aciertos = 0;
+                let respondidas = 0;
+
+                respuestasProfe.forEach((res, i) => {
+                    const radio = contenedor.querySelector(`input[name="p${i + 1}"]:checked`);
+                    if (radio) {
+                        respondidas++;
+                        if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
                     }
                 });
-                promesas.push(p);
-                if (rutaCompleta.endsWith('.html')) rutaHtml = rutaCompleta;
+
+                if (respondidas < respuestasProfe.length) {
+                    alert(" Por favor, responde todas las preguntas antes de finalizar.");
+                    return;
+                }
+
+                const notaFinal = (aciertos / respuestasProfe.length) * 10;
+
+                // guardar en indexedDB
+                await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
+
+                document.getElementById('actividad-modal').style.display = 'none';
+                abrirModal('resultado', notaFinal);
+            };
+        }
+
+        // ========== SISTEMA DE MODALES UNIFICADO ==========
+        async function abrirModal(tipo, puntos = 0) {
+            const modal = document.getElementById('modal-container');
+            const title = document.getElementById('modal-title');
+            const scoreNum = document.getElementById('score-number');
+            const scoreSec = document.getElementById('score-section');
+            const intentosInfo = document.getElementById('intentos-info');
+            const modalTextInicio = document.getElementById('modal-text-inicio');
+            const btnIzq = document.getElementById('btn-izq');
+            const btnDer = document.getElementById('btn-der');
+
+            modal.style.display = 'flex';
+
+            const matricula = localStorage.getItem('toro_matricula');
+            const intentosHechos = await obtenerIntentosDB(matricula, leccionActual.titulo);
+            const limiteMax = leccionActual.intentosMax || 3;
+            const restantes = limiteMax - intentosHechos.length;
+
+            if (tipo === 'inicio') {
+                title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
+                scoreSec.classList.add('hidden');
+                modalTextInicio.classList.remove('hidden');
+                modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver atrás.`;
+
+                btnIzq.innerText = "Volver";
+                btnIzq.onclick = () => { modal.style.display = 'none'; };
+                btnDer.innerText = "Aceptar";
+                btnDer.onclick = () => { aceptarEIrAActividad(); };
+
+            } else if (tipo === 'resultado') {
+                const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+                title.innerText = `¡${puntos >= 6 ? 'Buen trabajo' : 'Puedes mejorar'}, ${nombre}!`;
+
+                scoreSec.classList.remove('hidden');
+                modalTextInicio.classList.add('hidden');
+
+                scoreNum.innerText = `${puntos.toFixed(1)}/10`;
+                scoreNum.style.color = puntos >= 6 ? '#2e7d32' : '#c62828';
+                intentosInfo.innerHTML = `Número de intentos disponibles: <span style="color: ${restantes > 0 ? '#2e7d32' : '#c62828'}; font-weight: bold;">${restantes}</span>`;
+
+                btnIzq.innerText = "Reintentar";
+                btnIzq.style.display = restantes > 0 ? "block" : "none";
+                btnIzq.onclick = () => { abrirModal('inicio'); };
+
+                btnDer.innerText = "Finalizar";
+                btnDer.onclick = async () => {
+                    const mat = localStorage.getItem('toro_matricula') || "0000";
+                    const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+                    const todosIntentos = await obtenerIntentosDB(mat, leccionActual.titulo);
+
+                    let cuerpo = `REPORTE CONSOLIDADO T.O.R.O\n\nESTUDIANTE: ${nombre}\nMATRÍCULA: ${mat}\nLECCIÓN: ${leccionActual.titulo}\n\n`;
+                    todosIntentos.forEach((intento, i) => {
+                        cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
+                    });
+
+                    const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
+                    cuerpo += `\nPROMEDIO FINAL: ${promedio}/10`;
+
+                    descargarArchivoTxt(cuerpo, `Reporte_${mat}_${leccionActual.titulo.replace(/\s+/g, '_')}.txt`);
+                    modal.style.display = 'none';
+
+                    await renderizarLecciones();
+                };
             }
-        });
+        }
+        // ========== PROCESAMIENTO ZIP ==========
+        async function procesarHTML() {
+            const input = document.getElementById('fileInput');
+            if (!input.files[0]) return;
 
-        await Promise.all(promesas);
-        htmlOriginal = await zip.file(rutaHtml).async("string");
+            try {
+                const matricula = localStorage.getItem('toro_matricula');
+                const file = input.files[0];
+                const tituloNuevo = file.name.replace('.zip', '');
 
-        const leccionNueva = {
-            titulo: file.name.replace('.zip', ''),
-            html: htmlOriginal, 
-            rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1),
-            intentosMax: intentosTxt,
-            respuestasCorrectas: respuestasTxt
-        };
+                const leccionesExistentes = await cargarLeccionesDB(matricula);
+                const yaExiste = leccionesExistentes.some(lec => lec.titulo === tituloNuevo);
 
-        leccionesMemoria.push(leccionNueva);
-        localStorage.setItem('toro_lecciones_html', JSON.stringify(leccionesMemoria));
-        renderizarLecciones();
-        alert(`✅ Importado: ${leccionNueva.titulo}`);
+                if (yaExiste) {
+                    alert(` Ya has importado la lección "${tituloNuevo}".\nNo puedes importar la misma lección dos veces.`);
+                    input.value = '';
+                    document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
+                    document.getElementById('file-status').style.color = '#888';
+                    return;
+                }
 
-    } catch (e) {
-        console.error(e);
-        alert("Error procesando el ZIP");
-    }
-}
+                const arrayBuffer = await file.arrayBuffer();
+                const zip = await JSZip.loadAsync(arrayBuffer);
 
-// ========== UTILIDADES ==========
+                let htmlOriginal = "";
+                let rutaHtml = "";
+                let intentosTxt = 3;
+                let respuestasTxt = [];
 
-function descargarArchivoTxt(contenido, nombreArchivo) {
-    const elemento = document.createElement('a');
-    const archivo = new Blob([contenido], {type: 'text/plain'});
-    elemento.href = URL.createObjectURL(archivo);
-    elemento.download = nombreArchivo;
-    document.body.appendChild(elemento);
-    elemento.click();
-    document.body.removeChild(elemento);
-}
+                const promesas = [];
+                zip.forEach((rutaCompleta, entry) => {
+                    if (!entry.dir) {
+                        const p = entry.async("blob").then(async blob => {
+                            window.toro_recursos[rutaCompleta] = URL.createObjectURL(blob);
+                            if (rutaCompleta.endsWith('.txt')) {
+                                const texto = await blob.text();
+                                const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
+                                if (mInt) intentosTxt = parseInt(mInt[1]);
+                                const mResp = [...texto.matchAll(/RESPUESTA:\s*([a-c])/g)];
+                                respuestasTxt = mResp.map(m => m[1]);
+                            }
+                        });
+                        promesas.push(p);
+                        if (rutaCompleta.endsWith('.html')) rutaHtml = rutaCompleta;
+                    }
+                });
 
-function volverALeccion() {
-    document.getElementById('modal-container').style.display = 'none';
-}
+                await Promise.all(promesas);
+                htmlOriginal = await zip.file(rutaHtml).async("string");
 
-function cerrarSesion() {
-    if(confirm("¿Estás seguro? Se eliminarán tus datos y lecciones importadas.")){
-        localStorage.clear();
-        location.reload();
-    }
-}
+                const leccionNueva = {
+                    titulo: tituloNuevo,
+                    html: htmlOriginal,
+                    rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1),
+                    intentosMax: intentosTxt,
+                    respuestasCorrectas: respuestasTxt
+                };
 
-function mostrarLogin() {
+                // Guardar en IndexedDB
+                await guardarLeccionDB(matricula, leccionNueva);
+
+                // Recargar lecciones una vez mas
+                leccionesMemoria = await cargarLeccionesDB(matricula);
+                renderizarLecciones();
+
+                alert(` Importado: ${leccionNueva.titulo}`);
+
+                // Limpiar input del selector
+                input.value = '';
+                document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
+                document.getElementById('file-status').style.color = '#888';
+
+            } catch (e) {
+                console.error(e);
+                alert("Error procesando el ZIP: " + e.message);
+            }
+        }
+
+        // ========== UTILIDADES ==========
+
+        function descargarArchivoTxt(contenido, nombreArchivo) {
+            const elemento = document.createElement('a');
+            const archivo = new Blob([contenido], { type: 'text/plain' });
+            elemento.href = URL.createObjectURL(archivo);
+            elemento.download = nombreArchivo;
+            document.body.appendChild(elemento);
+            elemento.click();
+            document.body.removeChild(elemento);
+        }
+
+        function volverALeccion() {
+            document.getElementById('modal-container').style.display = 'none';
+        }
+
+        function cerrarSesion() {
+            if (confirm("¿Estás seguro? Se eliminarán tus datos y lecciones importadas.")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function mostrarLogin() {
     document.getElementById('main-content').innerHTML = `
-        <div class="login-container">
-            <h1 style="font-size: 3rem; color: #33691E; font-weight: 900;">T.O.R.O</h1>
-            <form id="loginForm">
-                <input type="text" id="matricula" placeholder="Matrícula" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:10px; border:1px solid #ccc;">
-                <input type="text" id="nombre" placeholder="Nombre completo" required style="width:100%; padding:10px; margin-bottom:10px; border-radius:10px; border:1px solid #ccc;">
-                <button type="submit" class="btn-toro" style="background:#689F38; color:white; width:100%;">Continuar</button>
+        <div class="login-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <h1 style="font-size: 3rem; color: #33691E; font-weight: 900; margin-bottom: 10px;">T.O.R.O</h1>
+            
+            <div style="margin-bottom: 30px; display: flex; justify-content: center; width: 100%;">
+                <img src="assets/logo_toro.png" alt="Logo T.O.R.O" style="width: 150px; height: auto; display: block;">
+            </div>
+
+            <form id="loginForm" style="width: 100%; max-width: 300px;">
+                <input type="text" id="matricula" placeholder="Matrícula" required 
+                       style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ccc; font-size: 16px;">
+                
+                <input type="text" id="nombre" placeholder="Nombre completo" required 
+                       style="width:100%; padding:12px; margin-bottom:20px; border-radius:10px; border:1px solid #ccc; font-size: 16px;">
+                
+                <button type="submit" class="btn-toro" 
+                        style="background:#689F38; color:white; width:100%; padding:12px; border-radius:10px; border:none; cursor:pointer; font-weight: bold;">
+                    Continuar
+                </button>
             </form>
         </div>
     `;
+
     document.getElementById('loginForm').onsubmit = (e) => {
         e.preventDefault();
         const nom = document.getElementById('nombre').value;
@@ -660,16 +869,18 @@ function mostrarLogin() {
         mostrarVistaEstudiante(nom);
     };
 }
+        window.addEventListener('DOMContentLoaded', async () => {
+            await inicializarDB();
 
-window.addEventListener('DOMContentLoaded', () => {
-    if (localStorage.getItem('toro_datos_listos') === 'true') {
-        mostrarVistaEstudiante(localStorage.getItem('toro_nombre'));
-    } else {
-        mostrarLogin();
-    }
-});
+            if (localStorage.getItem('toro_datos_listos') === 'true') {
+                mostrarVistaEstudiante(localStorage.getItem('toro_nombre'));
+            } else {
+                mostrarLogin();
+            }
+        });
     </script>
 
-    
+
 </body>
+
 </html>
