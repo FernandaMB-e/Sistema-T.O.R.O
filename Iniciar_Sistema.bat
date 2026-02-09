@@ -13,7 +13,7 @@ echo           SISTEMA T.O.R.O. - SERVIDOR ACTIVO
 echo ======================================================
 echo.
 echo  [PROFESOR]: Su sistema esta cargando...
-echo  Se abrira una ventana en su navegador en breve.
+echo  
 echo.
 echo  ------------------------------------------------------
 echo  MSG PARA ALUMNOS:
@@ -26,8 +26,7 @@ echo  IMPORTANTE: No cierre esta ventana mientras use el sistema.
 echo ======================================================
 echo.
 
-:: 2. Abrir el navegador para el profesor
-start http://localhost:5000
+
 
 :: Ejecutar el servidor ocultando los logs de peticiones
 node server.js > nul
