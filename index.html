@@ -8,290 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="icon" href="assets/logo_toro.png">
-    <style>
-        :root {
-            --primary-green: #4CAF50;
-            --dark-green: #2E7D32;
-            --bg-light: #F8F9FA;
-            --modal-blue: #2b59a2;
-            --color-header-text: #1a8f3d;
-            --color-text-blue: #3b5998;
-            --bg-lesson-container: #dcece2;
-            --border-lesson-container: #8ebf9e;
-            --btn-green-bg: #619b6b;
-            --btn-gray-bg: #637388;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg-light);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .login-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 2rem;
-            text-align: center;
-            min-height: 100vh;
-        }
-
-        .mobile-container {
-            background-color: white;
-            width: 100%;
-            max-width: 380px;
-            border-radius: 20px;
-            padding: 30px 20px;
-            margin: 20px auto;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .welcome-box {
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: center;
-            align-items: baseline;
-            gap: 6px;
-            color: #444;
-        }
-
-        .welcome-text {
-            font-size: 18px;
-            font-weight: 400;
-        }
-
-        .user-name {
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .course-title-container {
-            margin-bottom: 30px;
-        }
-
-        .course-label {
-            font-size: 11px;
-            color: #aaa;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .course-name {
-            color: var(--dark-green);
-            font-size: 22px;
-            font-weight: 800;
-            display: inline-block;
-        }
-
-        .thin-line {
-            border: 0;
-            height: 1px;
-            background: #e0e0e0;
-            width: 80%;
-            margin: 12px auto 0;
-        }
-
-        .lesson-container {
-            background: var(--bg-lesson-container);
-            border: 1px solid var(--border-lesson-container);
-            border-radius: 20px;
-            padding: 25px 15px;
-            margin-bottom: 10px;
-        }
-
-        .lesson-card {
-            background: white;
-            border-radius: 10px;
-            padding: 12px 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin-bottom: 10px;
-            transition: transform 0.2s;
-        }
-
-        .lesson-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .upload-area {
-            border: 2px dashed #ccc;
-            border-radius: 15px;
-            padding: 20px;
-            margin: 15px 0;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .info-text {
-            font-size: 12px;
-            color: #666;
-            margin: 15px 0 5px 0;
-        }
-
-        .test-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .btn-test {
-            background: white;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            cursor: pointer;
-            color: #333;
-            transition: all 0.2s;
-        }
-
-        .btn-test:hover {
-            background: #f0f0f0;
-            border-color: #999;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 350px;
-            border-radius: 25px;
-            overflow: hidden;
-            text-align: center;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            padding: 30px 20px;
-            color: white;
-            background-color: var(--modal-blue);
-        }
-
-        .score-value {
-            font-size: 3.5rem;
-            font-weight: 900;
-            margin: 10px 0;
-        }
-
-        .text-green {
-            color: #2e7d32;
-        }
-
-        .text-orange {
-            color: #f9a825;
-        }
-
-        .text-red {
-            color: #c62828;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .btn-toro {
-            border: none;
-            padding: 12px;
-            border-radius: 25px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            color: white;
-            margin-bottom: 10px;
-            transition: opacity 0.2s;
-        }
-
-        .btn-toro:hover {
-            opacity: 0.9;
-        }
-
-        #lesson-viewer-content,
-        #actividad-viewer-content {
-            padding: 20px;
-            text-align: left;
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-
-        .question-card {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .option-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.2s;
-        }
-
-        .option-btn:hover {
-            background: #f0f0f0;
-            border-color: var(--modal-blue);
-        }
-
-        .option-btn.selected {
-            background: #e3f2fd;
-            border-color: var(--modal-blue);
-        }
-
-        .alert {
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .alert-error {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ef9a9a;
-        }
-
-        .alert-success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/style.css">
 </head>
 
 <body>
@@ -300,40 +17,37 @@
 
     <!-- Modal de confirmación/resultado -->
     <div id="modal-container" class="modal-overlay">
-        <div class="modal-content" style="border-radius: 30px; overflow: hidden; border: none; max-width: 450px;">
+        <div class="modal-content">
 
-            <div id="modal-header-bg" class="modal-header"
-                style="background-color: #2b59a2; padding: 40px 20px; text-align: center; color: white;">
-                <div id="modal-icon" style="margin-bottom: 15px; font-size: 3rem;">
+            <div id="modal-header-bg" class="modal-header">
+                <div id="modal-icon">
                     <i class="fas fa-award"></i>
                 </div>
-                <h2 id="modal-title" style="font-size: 1.6rem; margin: 0; font-weight: 600; line-height: 1.2;"></h2>
+                <h2 id="modal-title"></h2>
             </div>
 
-            <div class="modal-body" style="padding: 30px; text-align: center;">
+            <div class="modal-body">
 
                 <div id="score-section" class="hidden">
-                    <p style="color: #888; margin: 0; font-size: 1.1rem;">Puntaje obtenido:</p>
-                    <div id="score-number" style="font-size: 5rem; font-weight: 900; margin: 5px 0; line-height: 1;">
+                    <p>Puntaje obtenido:</p>
+                    <div id="score-number">
                     </div>
-                    <p id="intentos-info" style="color: #444; margin-top: 10px; font-size: 0.95rem;"></p>
+                    <p id="intentos-info"></p>
                 </div>
 
-                <p id="modal-text-inicio" style="color: #555; font-size: 1.1rem; margin-bottom: 20px;"></p>
+                <p id="modal-text-inicio"></p>
                 <p id="modal-text" class="hidden"></p>
 
-                <div id="modal-footer-btns" style="display: flex; gap: 15px; margin-top: 25px;">
-                    <button id="btn-izq" class="btn-toro"
-                        style="background-color: #637388; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;"
-                        onclick="volverALeccion()">
-                        Volver
-                    </button>
+                <div id="modal-footer-btns">
+                    <div class="contenedor-botones">
+                        <button id="btn-izq" class="btn-toro  btn-izq" onclick="volverALeccion()">
+                            Volver
+                        </button>
 
-                    <button id="btn-der" class="btn-toro"
-                        style="background-color: #619b6b; width: 50%; color: white; border-radius: 20px; padding: 12px; border: none; font-weight: bold; cursor: pointer;"
-                        onclick="aceptarEIrAActividad()">
-                        Aceptar
-                    </button>
+                        <button id="btn-der" class="btn-toro btn-der" onclick="aceptarEIrAActividad()">
+                            Aceptar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -341,28 +55,30 @@
 
     <!-- Modal de contenido-->
     <div id="lesson-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 90%;">
+        <div class="modal-content">
             <div id="lesson-viewer-content"></div>
-            <p class="info-text" style="margin-bottom: 5px;">"Pulsa para ir a la actividad calificable"</p>
-            <button class="btn-toro"
-                style="background: var(--btn-green-bg); width: 80%; margin: 15px auto; display: block;"
-                onclick="iniciarActividadDesdeLeccion()">Continuar a Actividad</button>
+
+            <p class="info-text">"Pulsa para ir a la actividad calificable"</p>
+
+            <button class="btn-toro" onclick="iniciarActividadDesdeLeccion()">
+                Continuar a Actividad
+            </button>
         </div>
     </div>
 
     <!-- Modal de actividad -->
     <div id="actividad-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 90%; min-height: 40vh;">
+        <div class="modal-content">
             <div id="actividad-viewer-content">
-                <h2 style="text-align: center; color: var(--modal-blue); margin-top: 20px;">Actividad en curso</h2>
-                <p style="text-align: center; color: #888;">Cargando actividad...</p>
+                <h2>Actividad en curso</h2>
+                <p>Cargando actividad...</p>
             </div>
-            <button class="btn-toro" id="btn-finalizar-actividad"
-                style="background: var(--btn-gray-bg); width: 80%; margin: 15px auto; display: block;"
-                onclick="finalizarActividad()">Enviar Respuestas</button>
+
+            <button class="btn-toro" id="btn-finalizar-actividad" onclick="finalizarActividad()">
+                Enviar Respuestas
+            </button>
         </div>
     </div>
-
 
     <script src="jszip.min.js"></script>
 
@@ -380,7 +96,7 @@
         // ========== VARIABLES GLOBALES ==========
         let leccionesMemoria = JSON.parse(localStorage.getItem('toro_lecciones_html')) || [];
         let leccionActual = null;
-        window.toro_recursos = {}; 
+        window.toro_recursos = {};
 
         // ========== INDEXEDDB CONFIGURACION ==========
         let db;
@@ -490,36 +206,36 @@
             const root = document.getElementById('main-content');
             root.innerHTML = `
         <div class="mobile-container">
-            <div class="welcome-box">
-                <span class="welcome-text">¡Hola!</span>
-                <span class="user-name">${nombre}</span>
-            </div>
-            
-            <div class="course-title-container">
-                <span class="course-label">Estás en el curso de</span>
-                <div class="course-name">Cultura digital I</div>
-                <hr class="thin-line">
-            </div>
-            
-            <h2 style="color: var(--color-text-blue); font-size: 15px; text-align: left; margin-bottom: 10px;">Lecciones disponibles</h2>
-            <div id="contenedor-lecciones" class="lesson-container"></div>
-
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
-
-            <h2 style="color: var(--color-text-blue); font-size: 15px; text-align: left;">Importar nuevas lecciones</h2>
-            <div class="upload-area">
-                <span style="font-size: 35px; margin-bottom: 10px;">📂</span>
-                <input type="file" id="fileInput" accept=".zip" hidden onchange="actualizarNombreArchivo(this)">
-                <button class="btn-toro" style="background: #e3f2fd; color: #1976d2; border: 1px dashed #1976d2;" onclick="document.getElementById('fileInput').click()">Seleccionar ZIP</button>
-                <div id="file-status" style="font-size: 11px; margin-top: 8px; color: #888;">Ningún archivo seleccionado</div>
-            </div>
-
-            <p class="info-text">"Pulsa para cargar las lecciones"</p>
-            <button class="btn-toro" style="background: var(--btn-green-bg);" onclick="procesarHTML()">Cargar archivos</button>
-
-            <p class="info-text">"Pulsa para ingresar tus datos de nuevo"</p>
-            <button class="btn-toro" style="background: var(--btn-gray-bg);" onclick="cerrarSesion()">Cambiar de usuario</button>
+        <div class="welcome-box">
+            <span class="welcome-text">¡Hola!</span>
+            <span class="user-name">${nombre}</span>
         </div>
+        
+        <div class="course-title-container">
+            <span class="course-label">Estás en el curso de</span>
+            <div class="course-name">Cultura digital I</div>
+            <hr class="thin-line">
+        </div>
+        
+        <h2 class="section-title">Lecciones disponibles</h2>
+        <div id="contenedor-lecciones" class="lesson-container"></div>
+
+        <hr class="section-divider">
+
+        <h2 class="section-title">Importar nuevas lecciones</h2>
+        <div class="upload-area">
+            <span class="upload-icon">📂</span>
+            <input type="file" id="fileInput" accept=".zip" hidden onchange="actualizarNombreArchivo(this)">
+            <button class="btn-toro btn-upload" onclick="document.getElementById('fileInput').click()">Seleccionar ZIP</button>
+            <div id="file-status" class="file-status">Ningún archivo seleccionado</div>
+        </div>
+
+        <p class="info-text">"Pulsa para cargar las lecciones"</p>
+        <button class="btn-toro btn-green" onclick="procesarHTML()">Cargar archivos</button>
+
+        <p class="info-text">"Pulsa para ingresar tus datos de nuevo"</p>
+        <button class="btn-toro btn-gray" onclick="cerrarSesion()">Cambiar de usuario</button>
+    </div>
     `;
             renderizarLecciones();
         }
@@ -558,13 +274,13 @@
                     card.title = 'Sin intentos disponibles';
                 }
 
-                card.innerHTML = `
+                    card.innerHTML = `
             <span>📖 ${lec.titulo}</span> 
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 11px; color: ${intentosRestantes > 0 ? '#2e7d32' : '#c62828'};">
+            <div class="card-meta">
+                <span class="intentos-text ${intentosRestantes > 0 ? 'text-green' : 'text-red'}">
                     ${intentosRestantes}/${lec.intentosMax || 3} intentos
                 </span>
-                <div style="height: 10px; width: 10px; background-color: ${intentosRestantes > 0 ? 'var(--modal-blue)' : '#999'}; border-radius: 50%;"></div>
+                <div class="status-dot ${intentosRestantes > 0 ? 'dot-active' : 'dot-inactive'}"></div>
             </div>
         `;
                 contenedor.appendChild(card);
@@ -836,39 +552,32 @@
         }
 
         function mostrarLogin() {
-    document.getElementById('main-content').innerHTML = `
-        <div class="login-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-            <h1 style="font-size: 3rem; color: #33691E; font-weight: 900; margin-bottom: 10px;">T.O.R.O</h1>
+           document.getElementById('main-content').innerHTML = `
+        <div class="login-container login-centered">
+            <h1 class="app-title">T.O.R.O</h1>
             
-            <div style="margin-bottom: 30px; display: flex; justify-content: center; width: 100%;">
-                <img src="assets/logo_toro.png" alt="Logo T.O.R.O" style="width: 150px; height: auto; display: block;">
+            <div class="logo-wrapper">
+                <img src="assets/logo_toro.png" alt="Logo T.O.R.O" class="logo-cbta">
             </div>
 
-            <form id="loginForm" style="width: 100%; max-width: 300px;">
-                <input type="text" id="matricula" placeholder="Matrícula" required 
-                       style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ccc; font-size: 16px;">
-                
-                <input type="text" id="nombre" placeholder="Nombre completo" required 
-                       style="width:100%; padding:12px; margin-bottom:20px; border-radius:10px; border:1px solid #ccc; font-size: 16px;">
-                
-                <button type="submit" class="btn-toro" 
-                        style="background:#689F38; color:white; width:100%; padding:12px; border-radius:10px; border:none; cursor:pointer; font-weight: bold;">
-                    Continuar
-                </button>
+            <form id="loginForm">
+                <input type="text" id="matricula" placeholder="Matrícula" required class="login-input">
+                <input type="text" id="nombre" placeholder="Nombre completo" required class="login-input">
+                <button type="submit" class="btn-toro btn-continuar-login">Continuar</button>
             </form>
         </div>
     `;
 
-    document.getElementById('loginForm').onsubmit = (e) => {
-        e.preventDefault();
-        const nom = document.getElementById('nombre').value;
-        const mat = document.getElementById('matricula').value;
-        localStorage.setItem('toro_nombre', nom);
-        localStorage.setItem('toro_matricula', mat);
-        localStorage.setItem('toro_datos_listos', 'true');
-        mostrarVistaEstudiante(nom);
-    };
-}
+            document.getElementById('loginForm').onsubmit = (e) => {
+                e.preventDefault();
+                const nom = document.getElementById('nombre').value;
+                const mat = document.getElementById('matricula').value;
+                localStorage.setItem('toro_nombre', nom);
+                localStorage.setItem('toro_matricula', mat);
+                localStorage.setItem('toro_datos_listos', 'true');
+                mostrarVistaEstudiante(nom);
+            };
+        }
         window.addEventListener('DOMContentLoaded', async () => {
             await inicializarDB();
 
