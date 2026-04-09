@@ -129,6 +129,10 @@
             });
         }
 
+        // Esta función guarda una lección en IndexedDB para que el usuario pueda acceder a ella offline y no solo es
+        // sino que una vez terminada se guarde como terminada y se pueda bloquear el acceso de nuevo para evitar cuestiones 
+        // con las calificaciones
+
         function guardarLeccionDB(matricula, leccion) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(['lecciones'], 'readwrite');
@@ -152,6 +156,7 @@
 
 
         // cargar lecciones de una matrícula
+        //Con esto podemos cargar las lecciones que el usuario ha importado previamnete ya que estan asociandas a su matricula
         function cargarLeccionesDB(matricula) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(['lecciones'], 'readonly');
@@ -183,7 +188,7 @@
             });
         }
 
-        // obtenr intentos realizados
+        // obtener intentos realizados
         function obtenerIntentosDB(matricula, leccionTitulo) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(['historial'], 'readonly');
@@ -240,6 +245,8 @@
             renderizarLecciones();
         }
 
+        //Es una función de ayuda visual simple para cuando un usuario selecciona un archivo
+
         function actualizarNombreArchivo(input) {
             const statusDiv = document.getElementById('file-status');
             if (input.files[0]) {
@@ -248,13 +255,19 @@
             }
         }
 
+        //dibuja dinámicamente las "tarjetas" de las lecciones en la pantalla.
+
         async function renderizarLecciones() {
+            //Busca el contenedor de lecciones en el HTML y lo vacía (innerHTML = "") 
+            // para no duplicar contenido si se vuelve a llamar a la función.
             const contenedor = document.getElementById('contenedor-lecciones');
             if (!contenedor) return;
             contenedor.innerHTML = "";
-
+            // Obtiene la matrícula del usuario para filtrar las lecciones que le corresponden.
             const matricula = localStorage.getItem('toro_matricula');
-
+            //Recorre una lista de lecciones llamada leccionesMemoria. Para cada lección:
+            // Consulta a DB: Llama a obtenerIntentosDB para saber cuántas veces el alumno ya intentó esa lección.
+            //Cálculo de intentos: Resta los intentos realizados al máximo permitido (por defecto 3).
             for (let index = 0; index < leccionesMemoria.length; index++) {
                 const lec = leccionesMemoria[index];
 
@@ -287,6 +300,10 @@
             }
         }
 
+        //Esta funcion se encarga de mostrar el contenido de la lección importada en un modal, 
+        // permitiendo al usuario revisar el material antes de iniciar la actividad. Además de que las 
+        // imagenes se carguen correctamente desde el Zip 
+
         function verLeccionImportada(index) {
             const leccion = leccionesMemoria[index];
             leccionActual = leccion;
@@ -312,10 +329,17 @@
 
         // ========== FLUJO DE ACTIVIDAD ==========
 
+        //Esta función se llama cuando el usuario decide iniciar la actividad desde la vista de la lección
+
         function iniciarActividadDesdeLeccion() {
+            // cierra el modal de la lección para evitar superposiciones y luego llama a abrirmodal con el tipo inicio para
+            //  mostrar el modal de confirmación antes de entrar a la actividad
             document.getElementById('lesson-modal').style.display = 'none';
             abrirModal('inicio');
         }
+
+        //Esta función se encarga de cerrar el modal de confirmación y abirir el modal de actividad con el contenido de 
+        // la actividad para que el usuario pueda responder el quiz 
 
         function aceptarEIrAActividad() {
             document.getElementById('modal-container').style.display = 'none';
@@ -326,7 +350,11 @@
             }
         }
 
+        // Esta función se encarga de mostrar el contenido de la actividad, ocultando secciones no relevantes y preparando el quiz
+
         function mostrarActividad() {
+            // carga el HTML de la actividad en un modal especifico para actividades, luego busca las secciones de lectura y quiz para mostrar solo el quiz, 
+            //tambien oculta el boton del profesor y muestra el boton de finalizar actividad y le asigna la función para calcular la calificación al hacer click
             const contenedor = document.getElementById('actividad-viewer-content');
             document.getElementById('actividad-modal').style.display = 'flex';
             document.getElementById('actividad-modal').scrollTop = 0;
@@ -378,8 +406,11 @@
                 const notaFinal = (aciertos / respuestasProfe.length) * 10;
 
                 // guardar en indexedDB
+                // Guarda el intento con la calificacion obtenida 
                 await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
 
+                // cierra el modal de la actividad y muestra el modal de resultado con la calificación obtenida y el numero 
+                // de intentos restantes
                 document.getElementById('actividad-modal').style.display = 'none';
                 abrirModal('resultado', notaFinal);
             };
@@ -431,23 +462,29 @@
 
                 btnDer.innerText = "Finalizar";
                 btnDer.onclick = async () => {
-                    const mat = localStorage.getItem('toro_matricula') || "0000";
-                    const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-                    const todosIntentos = await obtenerIntentosDB(mat, leccionActual.titulo);
+                const mat = localStorage.getItem('toro_matricula') || "0000";
+                const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+                const todosIntentos = await obtenerIntentosDB(mat, leccionActual.titulo);
 
-                    let cuerpo = `REPORTE CONSOLIDADO T.O.R.O\n\nESTUDIANTE: ${nombre}\nMATRÍCULA: ${mat}\nLECCIÓN: ${leccionActual.titulo}\n\n`;
-                    todosIntentos.forEach((intento, i) => {
-                        cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
-                    });
+                let cuerpo = `REPORTE CONSOLIDADO T.O.R.O\n\nESTUDIANTE: ${nombre}\nMATRÍCULA: ${mat}\nLECCIÓN: ${leccionActual.titulo}\n\n`;
+                
+                todosIntentos.forEach((intento, i) => {
+                    cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
+                });
 
-                    const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
-                    cuerpo += `\nPROMEDIO FINAL: ${promedio}/10`;
+                const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
+                cuerpo += `\nPROMEDIO FINAL: ${promedio}/10`;
 
-                    descargarArchivoTxt(cuerpo, `Reporte_${mat}_${leccionActual.titulo.replace(/\s+/g, '_')}.txt`);
-                    modal.style.display = 'none';
-
-                    await renderizarLecciones();
-                };
+                // --- AQUÍ APLICAMOS LA OFUSCACIÓN ---
+                const cuerpoOfuscado = ofuscarReporte(cuerpo);
+                
+                // Guardamos el archivo con el contenido que "no se entiende"
+                descargarArchivoTxt(cuerpoOfuscado, `Reporte_${mat}_${leccionActual.titulo.replace(/\s+/g, '_')}.toro`); 
+                // Cambié la extensión a .toro para que no intenten abrirlo con Bloc de Notas tan fácil
+                
+                modal.style.display = 'none';
+                await renderizarLecciones();
+            };
             }
         }
         // ========== PROCESAMIENTO ZIP ==========
@@ -530,6 +567,17 @@
 
         // ========== UTILIDADES ==========
 
+        
+        function ofuscarReporte(texto) {
+            // Paso 1: Una simple rotación de caracteres o "sal" para que no sea Base64 puro
+            const textoModificado = texto.split('').map(char => 
+                String.fromCharCode(char.charCodeAt(0) + 3) // Desplaza cada carácter 3 posiciones
+            ).join('');
+            
+            // Paso 2: Convertir a Base64
+            return btoa(unescape(encodeURIComponent(textoModificado)));
+}
+        
         function descargarArchivoTxt(contenido, nombreArchivo) {
             const elemento = document.createElement('a');
             const archivo = new Blob([contenido], { type: 'text/plain' });
