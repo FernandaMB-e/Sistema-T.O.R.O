@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toro-v41';
+const CACHE_NAME = 'toro-v51'; // Sube la versión cada que hagas cambios grandes
 const assets = [
   './',
   './index.html',
@@ -7,16 +7,17 @@ const assets = [
   './manifest.json'
 ];
 
+// Instalación
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('Descargando archivos para modo offline...');
       return cache.addAll(assets);
     })
   );
   self.skipWaiting();
 });
 
+// Activación (Limpia cachés viejos)
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => {
@@ -28,12 +29,22 @@ self.addEventListener('activate', e => {
   return self.clients.claim();
 });
 
+// ESTRATEGIA: NETWORK FIRST (Ideal para desarrollo y actualización rápida)
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(response => {
-      return response || fetch(e.request).catch(() => {
-        return caches.match('./index.html');
-      });
-    })
+    fetch(e.request)
+      .then(networkResponse => {
+        // Si hay red, guardamos la copia nueva en el caché y devolvemos la respuesta
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(e.request, networkResponse.clone());
+          return networkResponse;
+        });
+      })
+      .catch(() => {
+        // SI NO HAY RED (Modo Offline), buscamos en el caché
+        return caches.match(e.request).then(cacheResponse => {
+          return cacheResponse || caches.match('./index.html');
+        });
+      })
   );
 });
