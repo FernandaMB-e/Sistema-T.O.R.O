@@ -331,7 +331,7 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
             </div>
 
             <button class="fab-add" onclick="abrirModalMateria()">+</button>
-            
+            <button class="btn-toro btn-gray" onclick="cerrarSesion()">Cambiar de usuario</button>
             
         </div>
     `;
@@ -391,8 +391,6 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
             <p class="info-text">"Pulsa para cargar las lecciones"</p>
             <button class="btn-toro btn-green" onclick="procesarHTML()">Cargar archivos</button>
 
-            <p class="info-text">"Pulsa para ingresar tus datos de nuevo"</p>
-            <button class="btn-toro btn-gray" onclick="cerrarSesion()">Cambiar de usuario</button>
         </div>
     `;
     renderizarLecciones();
@@ -657,7 +655,7 @@ async function guardarMateria() {
                 title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
                 scoreSec.classList.add('hidden');
                 modalTextInicio.classList.remove('hidden');
-                modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver atrás.`;
+                modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver a consultar el contenido.`;
 
                 btnIzq.innerText = "Volver";
                 btnIzq.onclick = () => { modal.style.display = 'none'; };
