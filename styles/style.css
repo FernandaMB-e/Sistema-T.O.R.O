@@ -553,29 +553,7 @@ input {
     background-color: white;
 }
 
-.card-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 
-.intentos-text {
-    font-size: 11px;
-}
-
-.status-dot {
-    height: 10px;
-    width: 10px;
-    border-radius: 50%;
-}
-
-.dot-active {
-    background-color: var(--modal-blue);
-}
-
-.dot-inactive {
-    background-color: #999;
-}
 
 /* 5. El botón verde grande de tu referencia */
 .btn-continuar {

@@ -506,12 +506,7 @@ async function guardarMateria() {
 
                     card.innerHTML = `
             <span>📖 ${lec.titulo}</span> 
-            <div class="card-meta">
-                <span class="intentos-text ${intentosRestantes > 0 ? 'text-green' : 'text-red'}">
-                    ${intentosRestantes}/${lec.intentosMax || 3} intentos
-                </span>
-                <div class="status-dot ${intentosRestantes > 0 ? 'dot-active' : 'dot-inactive'}"></div>
-            </div>
+            
         `;
                 contenedor.appendChild(card);
             }
