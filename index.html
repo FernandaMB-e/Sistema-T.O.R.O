@@ -67,6 +67,40 @@
         <button onclick="guardarMateria()" class="btn-crear-materia">crear</button>
         <button onclick="cerrarModalMateria()" class="btn-cancelar-materia" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
     </div>
+    <!-- 
+        MODAL DE CONFIRMACIÓN DE GUARDAR RESPUESTAS
+        Se muestra cuando el alumno pulsa "Finalizar actividad".
+       -->
+    <div id="confirm-modal" class="modal-overlay hidden" style="display: none;">
+        <div class="modal-content">
+
+            <div class="modal-header" style="background-color: #3b5998;">
+                <div id="modal-icon"></div>
+                <h2 id="modal-title">¿Seguro que deseas guardar tus respuestas?</h2>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="confirm-warning-box">
+                    <p>
+                        <span class="warning-icon"></span>
+                        Esta acción no se puede deshacer. 
+                        Una vez enviadas, no podrás cambiar tus respuestas.
+                    </p>
+                </div>
+
+                <!-- Badge que muestra dinámicamente los intentos restantes -->
+                <span id="confirm-intentos-badge" class="confirm-intentos-badge"></span>
+
+                <!-- Botones: Cancelar regresa sin guardar, Confirmar guarda y avanza -->
+                <div class="modal-footer" style="display:flex; gap:10px; justify-content:center;">
+                    <button id="btn-confirm-cancelar" class="btn-toro btn-gray">Cancelar</button>
+                    <button id="btn-confirm-aceptar" class="btn-toro btn-green">Confirmar</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 
     <script src="jszip.min.js"></script>
@@ -620,6 +654,8 @@ async function guardarMateria() {
             const btnProfesor = contenedor.querySelector('.btn');
             if (btnProfesor) btnProfesor.style.display = 'none';
 
+            // ── Botón "Finalizar Actividad" ───────────────────────────────────────────
+            // Se configura cada vez que se abre una actividad nueva.
             const btnToro = document.getElementById('btn-finalizar-actividad');
             btnToro.onclick = async function () {
                 const matricula = localStorage.getItem('toro_matricula');
@@ -627,29 +663,77 @@ async function guardarMateria() {
                 let aciertos = 0;
                 let respondidas = 0;
 
+                // ── Paso 1: Contar respuestas seleccionadas y aciertos ────────────────
+                // Recorre cada respuesta correcta del profesor y busca el radio 
+                // que el alumno marcó (input[name="p1"], p2, p3...).
                 respuestasProfe.forEach((res, i) => {
                     const radio = contenedor.querySelector(`input[name="p${i + 1}"]:checked`);
                     if (radio) {
                         respondidas++;
-                        if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
+                        // Compara ignorando mayúsculas y espacios extra
+                        if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) {
+                            aciertos++;
+                        }
                     }
                 });
 
+                // ── Paso 2: Validar que todas las preguntas estén respondidas ─────────
+                // Si el alumno dejó alguna sin contestar, se detiene aquí.
                 if (respondidas < respuestasProfe.length) {
-                    alert(" Por favor, responde todas las preguntas antes de finalizar.");
-                    return;
+                    alert("Por favor, responde todas las preguntas antes de finalizar.");
+                    return; // Salimos de la función, no se guarda nada
                 }
 
+                // ── Paso 3: Calcular intentos restantes ANTES de guardar ──────────────
+                // Lo calculamos ahora para mostrarlo en el badge del modal.
+                // Le restamos 1 porque este intento aún no se ha guardado.
+                const intentosHechosConfirm = await obtenerIntentosDB(matricula, leccionActual.titulo);
+                const restantesConfirm = (leccionActual.intentosMax || 3) - intentosHechosConfirm.length - 1;
+
+                // Escribimos el texto del badge dinámicamente
+                document.getElementById('confirm-intentos-badge').innerText =
+                    `Te quedarán ${restantesConfirm} intento(s) después de este`;
+
+                // ── Paso 4: Mostrar el modal de confirmación ──────────────────────────
+                const confirmModal = document.getElementById('confirm-modal');
+                confirmModal.classList.remove('hidden'); // Quita la clase que lo oculta con CSS
+                confirmModal.style.display = 'flex';    // Lo hace visible
+
+                // ── Paso 5: Esperar la decisión del alumno ────────────────────────────
+                // Usamos una Promesa para "pausar" el código hasta que el alumno
+                // pulse Confirmar o Cancelar. Resolve(true) = confirmó, resolve(false) = canceló.
+                const confirmar = await new Promise(resolve => {
+
+                    document.getElementById('btn-confirm-aceptar').onclick = () => {
+                        confirmModal.classList.add('hidden'); // Ocultamos el modal
+                        confirmModal.style.display = 'none';
+                        resolve(true); // El alumno confirmó → continuamos
+                    };
+
+                    document.getElementById('btn-confirm-cancelar').onclick = () => {
+                        confirmModal.classList.add('hidden'); // Ocultamos el modal
+                        confirmModal.style.display = 'none';
+                        resolve(false); // El alumno canceló → nos detenemos
+                    };
+                });
+
+                // ── Paso 6: Si canceló, salimos sin guardar nada ──────────────────────
+                if (!confirmar) return;
+
+                // ── Paso 7: Calcular calificación y guardar en IndexedDB ──────────────
+                // Fórmula: (aciertos / total de preguntas) * 10 → escala del 0 al 10
                 const notaFinal = (aciertos / respuestasProfe.length) * 10;
 
-                // guardar en indexedDB
-                // Guarda el intento con la calificacion obtenida 
+                // Guarda el intento con la matrícula, título de lección y calificación
                 await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
 
-                // cierra el modal de la actividad y muestra el modal de resultado con la calificación obtenida y el numero 
-                // de intentos restantes
+                // Recarga las tarjetas de lecciones para actualizar los intentos restantes
+                // (esto también deshabilita la lección si ya no quedan intentos)
+                await renderizarLecciones();
+
+                // ── Paso 8: Cerrar actividad y mostrar resultado ───────────────────────
                 document.getElementById('actividad-modal').style.display = 'none';
-                abrirModal('resultado', notaFinal);
+                abrirModal('resultado', notaFinal); // Muestra la calificación obtenida
             };
         }
 
