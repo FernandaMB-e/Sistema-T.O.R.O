@@ -12,6 +12,22 @@
 </head>
 
 <body>
+    <!-- Excepcion 2.2-->
+    <noscript>
+    <main style="padding: 2rem; text-align: center; font-family: sans-serif;">
+      <h1>Sistema T.O.R.O. requiere JavaScript</h1>
+      <p>Para funcionar sin internet, este sistema necesita que JavaScript esté habilitado en tu navegador.</p>
+      <section>
+        <h2>Navegadores recomendados:</h2>
+        <ul>
+          <li>Google Chrome (v.60+)</li>
+          <li>Mozilla Firefox (v.55+)</li>
+          <li>Safari (v.11+) o Microsoft Edge (v.79+)</li>
+        </ul>
+        <p><strong>Nota:</strong> Internet Explorer y Opera Mini en modo "Ahorro Extremo" no son compatibles.</p>
+      </section>
+    </main>
+  </noscript>
 
     <div id="main-content"></div>
 
@@ -134,7 +150,16 @@ function inicializarDB() {
 
         const request = store.add(data);
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+
+        // --- MODIFICACIÓN: Intercepción de Memoria Llena ---
+        request.onerror = (e) => {
+            const errorDB = e.target.error;
+            if (errorDB.name === 'QuotaExceededError') {
+                reject(new Error("ALMACENAMIENTO_LLENO"));
+            } else {
+                reject(errorDB);
+            }
+        };
     });
 }
 
@@ -733,6 +758,19 @@ async function guardarMateria() {
         const file = input.files[0];
         const tituloNuevo = file.name.replace('.zip', '');
 
+        // --- Excepcion 2.1 Prevención de OOM (Out Of Memory) ---
+        // Definimos un límite seguro para teléfonos de gama de entrada (35 MB)
+        const limiteMB = 35;
+        const maxSize = limiteMB * 1024 * 1024;
+        
+        if (file.size > maxSize) {
+            alert(`El archivo "${file.name}" es demasiado pesado (${(file.size / 1024 / 1024).toFixed(1)} MB).\n\nEl límite máximo permitido es de ${limiteMB} MB para evitar que el sistema colapse en tu celular. Pide al profesor una versión más ligera.`);
+            input.value = '';
+            document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
+            return;
+        }
+        // ----------------------------------------------------------
+
         const leccionesExistentes = await cargarLeccionesDB(matricula);
         const yaExiste = leccionesExistentes.some(lec => lec.titulo === tituloNuevo);
 
@@ -832,8 +870,20 @@ async function guardarMateria() {
         document.getElementById('file-status').style.color = '#888';
 
     } catch (e) {
-        console.error(e);
-        alert("Error procesando el ZIP: " + e.message);
+        console.error("Error exacto capturado:", e);
+        
+        // Limpiamos el input para que pueda intentar de nuevo
+        document.getElementById('fileInput').value = '';
+        document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
+        document.getElementById('file-status').style.color = '#888';
+        
+        // Manejo de excepciones para el usuario final
+        if (e.message === "ALMACENAMIENTO_LLENO"|| e.name === "QuotaExceededError") {
+            alert("¡Tu celular no tiene espacio suficiente!\n\nNo pudimos guardar la lección. Por favor, libera espacio y vuelve a intentarlo.");
+        } else {
+            // Error genérico para archivos corruptos o truncados (ECONNRESET)
+            alert("Ocurrió un error al intentar abrir el archivo ZIP.\n\nEs posible que la descarga se haya interrumpido o el archivo esté dañado. Vuelve a descargarlo del profesor.");
+        }
     }
 }
 
