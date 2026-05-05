@@ -935,97 +935,38 @@ input {
     transform: scale(1.1); /* Efecto de crecimiento sutil */
 }
 
-/* ================================================================
-   MODAL DE CONFIRMACIÓN DE GUADAR RESPUESTAS (#confirm-modal)
-   Sigue el mismo patrón que .modal-content y .modal-header
-   que ya usamos en #modal-container y #modal-materia
-   ================================================================ */
 
-/* El contenedor del modal ya lo maneja .modal-overlay,
-   solo necesitamos ajustar el tamaño del contenido */
-#confirm-modal .modal-content {
-    max-width: 360px;        /* Más compacto que los otros modales */
-    border-radius: 25px;     /* Igual que .modal-content general */
-    overflow: hidden;        /* Para que el header respete las esquinas */
-}
 
-/* ── Encabezado ────────────────────────────────────────────────── 
-   */
-#confirm-modal .modal-header {
-    background-color:  #2b59a2;  
-    padding: 30px 20px;         /* Igual a .modal-header */
-    color: white;
-    text-align: center;
-}
-
-#confirm-modal .modal-header #modal-icon {
-    font-size: 2.5rem;      /* Un poco más pequeño que el de resultado */
-    margin-bottom: 10px;
-    display: block;
-}
-
-#confirm-modal .modal-header #modal-title {
-    font-size: 1.2rem;      /* Más compacto porque el texto es largo */
-    font-weight: 600;
-    line-height: 1.3;
-    margin: 0;
-}
-
-/* ── Cuerpo del modal ──────────────────────────────────────────── 
-   Mismo padding que el .modal-body ya definido               */
-#confirm-modal .modal-body {
-    padding: 25px 20px;
-    text-align: center;
-}
-
-                                 */
-.confirm-warning-box {
-    background: #fff3e0;            /* Amarillo muy suave */
-    border: 1px solid #ffb74d;      /* Borde naranja claro */
-    border-radius: 12px;            /* Redondeado como tus lesson-card */
-    padding: 14px 16px;
-    margin-bottom: 20px;
-    text-align: left;               /* El texto se lee mejor alineado */
-}
-
-.confirm-warning-box p {
-    margin: 0;
-    font-size: 0.9rem;
-    color:  #2b59a2;         
-    line-height: 1.5;
-}
-
-.confirm-warning-box .warning-icon {
-    font-size: 1rem;
-    margin-right: 6px;
-}
-
-/* ── Badge de intentos ─────────────────────────────────────────── 
-  */
-.confirm-intentos-badge {
-    display: inline-block;
-    background: #bbb5b4;        
-    color:  #2b59a2;             
-    font-weight: 700;
-    padding: 5px 14px;
-    border-radius: 20px;        
-    margin-bottom: 20px;
-}
-
-/* ── Fila de botones ───────────────────────────────────────────── 
-   Mismo patrón que tu .modal-footer ya existente,
-   los botones usan tus clases .btn-toro .btn-gray / .btn-green  */
-#confirm-modal .modal-footer {
+/* Busca la sección de #modal-footer-btns y reemplázala por esta */
+.modal-footer {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    padding-top: 5px;
+    gap: 15px;
+    padding: 20px 0;
 }
 
-#confirm-modal .modal-footer .btn-toro {
-    width: 130px;           /* Mismo ancho que #modal-footer-btns .btn-toro */
-    padding: 12px 0;
-    margin: 0;              /* Quitamos el margin-bottom del .btn-toro general */
-    font-size: 15px;
+.btn-toro {
+    border: none;
+    padding: 12px 25px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+    border-radius: 25px;
+    font-size: 16px;
+    min-width: 120px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+/* Colores específicos de tus botones */
+.btn-gray {
+    background-color: #637388 !important;
+}
+
+#btn-der, .btn-green {
+    background-color: #619b6b !important;
+}
+
+.btn-toro:active {
+    transform: scale(0.95);
 }

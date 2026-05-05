@@ -9,9 +9,12 @@
     <meta name="theme-color" content="#2e7d32">
     <link rel="icon" href="assets/logo_toro.png">
     <link rel="stylesheet" href="styles/style.css">
+    
 </head>
 
 <body>
+
+
     <!-- Excepcion 2.2-->
     <noscript>
     <main style="padding: 2rem; text-align: center; font-family: sans-serif;">
@@ -67,39 +70,23 @@
         <button onclick="guardarMateria()" class="btn-crear-materia">crear</button>
         <button onclick="cerrarModalMateria()" class="btn-cancelar-materia" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
     </div>
-    <!-- 
-        MODAL DE CONFIRMACIÓN DE GUARDAR RESPUESTAS
-        Se muestra cuando el alumno pulsa "Finalizar actividad".
-       -->
-    <div id="confirm-modal" class="modal-overlay hidden" style="display: none;">
-        <div class="modal-content">
+</div>
 
-            <div class="modal-header" style="background-color: #3b5998;">
-                <div id="modal-icon"></div>
-                <h2 id="modal-title">¿Seguro que deseas guardar tus respuestas?</h2>
-            </div>
+<div id="lesson-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div id="lesson-viewer-content"></div>
+        <button class="btn-toro" onclick="iniciarActividadDesdeLeccion()">Realizar Actividad</button>
+        <button class="btn-toro btn-gray" onclick="document.getElementById('lesson-modal').style.display='none'">Cerrar</button>
+    </div>
+</div>
 
-            <div class="modal-body">
+<!-- Modal para realizar la Actividad (Quiz) -->
 
-                <div class="confirm-warning-box">
-                    <p>
-                        <span class="warning-icon"></span>
-                        Esta acción no se puede deshacer. 
-                        Una vez enviadas, no podrás cambiar tus respuestas.
-                    </p>
-                </div>
-
-                <!-- Badge que muestra dinámicamente los intentos restantes -->
-                <span id="confirm-intentos-badge" class="confirm-intentos-badge"></span>
-
-                <!-- Botones: Cancelar regresa sin guardar, Confirmar guarda y avanza -->
-                <div class="modal-footer" style="display:flex; gap:10px; justify-content:center;">
-                    <button id="btn-confirm-cancelar" class="btn-toro btn-gray">Cancelar</button>
-                    <button id="btn-confirm-aceptar" class="btn-toro btn-green">Confirmar</button>
-                </div>
-
-            </div>
-        </div>
+<div id="actividad-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div id="actividad-viewer-content"></div>
+        
+        <button id="btn-finalizar-actividad" class="btn-toro">Guardar respuestas</button>
     </div>
 </div>
 
@@ -125,21 +112,31 @@
         let leccionActual = null;
         window.toro_recursos = {};
 
-        // ========== INDEXEDDB CONFIGURACION ==========
-       let db; 
+        
+       // ========== INDEXEDDB CONFIGURACION ==========
+let db; 
 
 function inicializarDB() {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open("ToroDB", 2);
+        // 1. Aumentamos la versión a 3 para forzar la actualización en el navegador
+        const request = indexedDB.open("ToroDB", 3);
 
         request.onupgradeneeded = (e) => {
             const dbInstance = e.target.result;
+            
             if (!dbInstance.objectStoreNames.contains("materias")) {
                 dbInstance.createObjectStore("materias", { keyPath: "id", autoIncrement: true });
             }
             if (!dbInstance.objectStoreNames.contains("lecciones")) {
                 const store = dbInstance.createObjectStore("lecciones", { keyPath: "id", autoIncrement: true });
                 store.createIndex("matricula", "matricula", { unique: false });
+            }
+            
+            // --- NUEVO: CREAMOS LA TABLA HISTORIAL ---
+            if (!dbInstance.objectStoreNames.contains("historial")) {
+                const historialStore = dbInstance.createObjectStore("historial", { keyPath: "id", autoIncrement: true });
+                // Creamos el índice compuesto que pide tu función obtenerIntentosDB
+                historialStore.createIndex("matricula_leccion", ["matricula", "leccionTitulo"], { unique: false });
             }
         };
 
@@ -151,6 +148,8 @@ function inicializarDB() {
         request.onerror = (e) => reject(e.target.error);
     });
 }
+
+
         // Esta función guarda una lección en IndexedDB para que el usuario pueda acceder a ella offline y no solo es
         // sino que una vez terminada se guarde como terminada y se pueda bloquear el acceso de nuevo para evitar cuestiones 
         // con las calificaciones
@@ -179,13 +178,20 @@ function inicializarDB() {
             titulo: leccion.titulo,
             html: leccion.html,
             respuestasCorrectas: leccion.respuestasCorrectas,
+
+            // ==================================================
+            // ¡EL SECRETO ESTÁ AQUÍ! 
+            // Ahora sí le decimos a la DB que guarde los videos, PDFs y audios
+            archivos: leccion.archivos, 
+            // ==================================================
+
             fechaImportacion: new Date().toISOString()
         };
 
         const request = store.add(data);
         request.onsuccess = () => resolve(request.result);
 
-        // --- MODIFICACIÓN: Intercepción de Memoria Llena ---
+        // Intercepción de Memoria Llena
         request.onerror = (e) => {
             const errorDB = e.target.error;
             if (errorDB.name === 'QuotaExceededError') {
@@ -196,7 +202,6 @@ function inicializarDB() {
         };
     });
 }
-
         async function guardarMateria() {
     const nombre = document.getElementById('reg-nombre-materia').value.trim();
     const grupo = document.getElementById('reg-grupo').value.trim();
@@ -571,32 +576,53 @@ async function guardarMateria() {
             }
         }
 
+        // --- NUEVA FUNCIÓN: Reparador Universal de Recursos ---
+function prepararHTMLConRecursos(htmlOriginal, archivos) {
+    if (!archivos) return htmlOriginal;
+    let htmlReparado = htmlOriginal;
+    
+    // PARCHE: Agregamos un estilo extra para que el tablero no se desborde en móvil
+    const estiloMovil = `
+        <style>
+            #game-board { 
+                transform: scale(0.85); /* Encogemos un poco el tablero para que quepa */
+                transform-origin: top center;
+                margin: 0 auto !important;
+                max-width: 100% !important;
+            }
+            .quiz-grid { gap: 0.5rem !important; }
+            .item { padding: 0.5rem !important; font-size: 0.9rem !important; }
+        </style>
+    `;
+    htmlReparado = estiloMovil + htmlReparado;
+
+    Object.keys(archivos).forEach(ruta => {
+        if (!window.toro_recursos[ruta]) {
+            window.toro_recursos[ruta] = URL.createObjectURL(archivos[ruta]);
+        }
+        const blobUrl = window.toro_recursos[ruta];
+        const nombreArchivo = ruta.split('/').pop();
+        htmlReparado = htmlReparado.split('./' + nombreArchivo).join(blobUrl);
+        htmlReparado = htmlReparado.split(nombreArchivo).join(blobUrl);
+    });
+    
+    return htmlReparado;
+}
         //Esta funcion se encarga de mostrar el contenido de la lección importada en un modal, 
         // permitiendo al usuario revisar el material antes de iniciar la actividad. Además de que las 
         // imagenes se carguen correctamente desde el Zip 
 
         function verLeccionImportada(index) {
-            const leccion = leccionesMemoria[index];
-            leccionActual = leccion;
+    const leccion = leccionesMemoria[index];
+    leccionActual = leccion;
 
-            const contenedor = document.getElementById('lesson-viewer-content');
-            contenedor.innerHTML = leccion.html;
+    const contenedor = document.getElementById('lesson-viewer-content');
+    
+    // Usamos nuestra nueva función maestra para inyectar todo reparado (Videos, PDF, CSS)
+    contenedor.innerHTML = prepararHTMLConRecursos(leccion.html, leccion.archivos);
 
-            // Reparar imágenes
-            const imagenes = contenedor.querySelectorAll('img');
-            imagenes.forEach(img => {
-                const srcOriginal = img.getAttribute('src');
-                const nombreLimpio = srcOriginal.replace('./', '');
-                const rutaConCarpeta = leccion.rutaBase + nombreLimpio;
-                const blobUrl = window.toro_recursos[nombreLimpio] ||
-                    window.toro_recursos[rutaConCarpeta] ||
-                    window.toro_recursos[srcOriginal];
-
-                if (blobUrl) img.src = blobUrl;
-            });
-
-            document.getElementById('lesson-modal').style.display = 'flex';
-        }
+    document.getElementById('lesson-modal').style.display = 'flex';
+}
 
         // ========== FLUJO DE ACTIVIDAD ==========
 
@@ -622,218 +648,242 @@ async function guardarMateria() {
         }
 
         // Esta función se encarga de mostrar el contenido de la actividad, ocultando secciones no relevantes y preparando el quiz
-
-        function mostrarActividad() {
-            // carga el HTML de la actividad en un modal especifico para actividades, luego busca las secciones de lectura y quiz para mostrar solo el quiz, 
-            //tambien oculta el boton del profesor y muestra el boton de finalizar actividad y le asigna la función para calcular la calificación al hacer click
-            const contenedor = document.getElementById('actividad-viewer-content');
-            document.getElementById('actividad-modal').style.display = 'flex';
-            document.getElementById('actividad-modal').scrollTop = 0;
-
-            contenedor.innerHTML = leccionActual.html;
-
-            const imagenes = contenedor.querySelectorAll('img');
-            imagenes.forEach(img => {
-                const srcOriginal = img.getAttribute('src');
-                const nombreLimpio = srcOriginal.replace('./', '');
-                const rutaConCarpeta = leccionActual.rutaBase + nombreLimpio;
-                const blobUrl = window.toro_recursos[nombreLimpio] || window.toro_recursos[rutaConCarpeta];
-                if (blobUrl) img.src = blobUrl;
-            });
-
-            const secLectura = contenedor.querySelector('#lectura');
-            const secQuiz = contenedor.querySelector('#quiz');
-            const tabsProfesor = contenedor.querySelector('.tabs');
-            if (secLectura) secLectura.style.display = 'none';
-            if (tabsProfesor) tabsProfesor.style.display = 'none';
-            if (secQuiz) {
-                secQuiz.style.display = 'block';
-                secQuiz.classList.add('active');
-            }
-
-            const btnProfesor = contenedor.querySelector('.btn');
-            if (btnProfesor) btnProfesor.style.display = 'none';
-
-            // ── Botón "Finalizar Actividad" ───────────────────────────────────────────
-            // Se configura cada vez que se abre una actividad nueva.
-            const btnToro = document.getElementById('btn-finalizar-actividad');
-            btnToro.onclick = async function () {
-                const matricula = localStorage.getItem('toro_matricula');
-                const respuestasProfe = leccionActual.respuestasCorrectas || [];
-                let aciertos = 0;
-                let respondidas = 0;
-
-                // ── Paso 1: Contar respuestas seleccionadas y aciertos ────────────────
-                // Recorre cada respuesta correcta del profesor y busca el radio 
-                // que el alumno marcó (input[name="p1"], p2, p3...).
-                respuestasProfe.forEach((res, i) => {
-                    const radio = contenedor.querySelector(`input[name="p${i + 1}"]:checked`);
-                    if (radio) {
-                        respondidas++;
-                        // Compara ignorando mayúsculas y espacios extra
-                        if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) {
-                            aciertos++;
-                        }
-                    }
-                });
-
-                // ── Paso 2: Validar que todas las preguntas estén respondidas ─────────
-                // Si el alumno dejó alguna sin contestar, se detiene aquí.
-                if (respondidas < respuestasProfe.length) {
-                    alert("Por favor, responde todas las preguntas antes de finalizar.");
-                    return; // Salimos de la función, no se guarda nada
-                }
-
-                // ── Paso 3: Calcular intentos restantes ANTES de guardar ──────────────
-                // Lo calculamos ahora para mostrarlo en el badge del modal.
-                // Le restamos 1 porque este intento aún no se ha guardado.
-                const intentosHechosConfirm = await obtenerIntentosDB(matricula, leccionActual.titulo);
-                const restantesConfirm = (leccionActual.intentosMax || 3) - intentosHechosConfirm.length - 1;
-
-                // Escribimos el texto del badge dinámicamente
-                document.getElementById('confirm-intentos-badge').innerText =
-                    `Te quedarán ${restantesConfirm} intento(s) después de este`;
-
-                // ── Paso 4: Mostrar el modal de confirmación ──────────────────────────
-                const confirmModal = document.getElementById('confirm-modal');
-                confirmModal.classList.remove('hidden'); // Quita la clase que lo oculta con CSS
-                confirmModal.style.display = 'flex';    // Lo hace visible
-
-                // ── Paso 5: Esperar la decisión del alumno ────────────────────────────
-                // Usamos una Promesa para "pausar" el código hasta que el alumno
-                // pulse Confirmar o Cancelar. Resolve(true) = confirmó, resolve(false) = canceló.
-                const confirmar = await new Promise(resolve => {
-
-                    document.getElementById('btn-confirm-aceptar').onclick = () => {
-                        confirmModal.classList.add('hidden'); // Ocultamos el modal
-                        confirmModal.style.display = 'none';
-                        resolve(true); // El alumno confirmó → continuamos
-                    };
-
-                    document.getElementById('btn-confirm-cancelar').onclick = () => {
-                        confirmModal.classList.add('hidden'); // Ocultamos el modal
-                        confirmModal.style.display = 'none';
-                        resolve(false); // El alumno canceló → nos detenemos
-                    };
-                });
-
-                // ── Paso 6: Si canceló, salimos sin guardar nada ──────────────────────
-                if (!confirmar) return;
-
-                // ── Paso 7: Calcular calificación y guardar en IndexedDB ──────────────
-                // Fórmula: (aciertos / total de preguntas) * 10 → escala del 0 al 10
-                const notaFinal = (aciertos / respuestasProfe.length) * 10;
-
-                // Guarda el intento con la matrícula, título de lección y calificación
-                await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
-
-                // Recarga las tarjetas de lecciones para actualizar los intentos restantes
-                // (esto también deshabilita la lección si ya no quedan intentos)
-                await renderizarLecciones();
-
-                // ── Paso 8: Cerrar actividad y mostrar resultado ───────────────────────
-                document.getElementById('actividad-modal').style.display = 'none';
-                abrirModal('resultado', notaFinal); // Muestra la calificación obtenida
-            };
-        }
-
-        // ========== SISTEMA DE MODALES UNIFICADO ==========
-        async function abrirModal(tipo, puntos = 0) {
-            const modal = document.getElementById('modal-container');
-            const title = document.getElementById('modal-title');
-            const scoreNum = document.getElementById('score-number');
-            const scoreSec = document.getElementById('score-section');
-            const intentosInfo = document.getElementById('intentos-info');
-            const modalTextInicio = document.getElementById('modal-text-inicio');
-            const btnIzq = document.getElementById('btn-izq');
-            const btnDer = document.getElementById('btn-der');
-
-            modal.style.display = 'flex';
-
-            const matricula = localStorage.getItem('toro_matricula');
-            const intentosHechos = await obtenerIntentosDB(matricula, leccionActual.titulo);
-            const limiteMax = leccionActual.intentosMax || 3;
-            const restantes = limiteMax - intentosHechos.length;
-
-            if (tipo === 'inicio') {
-                title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
-                scoreSec.classList.add('hidden');
-                modalTextInicio.classList.remove('hidden');
-                modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver a consultar el contenido.`;
-
-                btnIzq.innerText = "Volver";
-                btnIzq.onclick = () => { modal.style.display = 'none'; };
-                btnDer.innerText = "Aceptar";
-                btnDer.onclick = () => { aceptarEIrAActividad(); };
-
-            } else if (tipo === 'resultado') {
-                const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-                title.innerText = `¡${puntos >= 6 ? 'Buen trabajo' : 'Puedes mejorar'}, ${nombre}!`;
-
-                scoreSec.classList.remove('hidden');
-                modalTextInicio.classList.add('hidden');
-
-                scoreNum.innerText = `${puntos.toFixed(1)}/10`;
-                scoreNum.style.color = puntos >= 6 ? '#2e7d32' : '#c62828';
-                intentosInfo.innerHTML = `Número de intentos disponibles: <span style="color: ${restantes > 0 ? '#2e7d32' : '#c62828'}; font-weight: bold;">${restantes}</span>`;
-
-                btnIzq.innerText = "Reintentar";
-                btnIzq.style.display = restantes > 0 ? "block" : "none";
-                btnIzq.onclick = () => { abrirModal('inicio'); };
-
-                btnDer.innerText = "Finalizar";
-                btnDer.onclick = async () => {
-    const mat = localStorage.getItem('toro_matricula') || "0000";
-    const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-    const todosIntentos = await obtenerIntentosDB(mat, leccionActual.titulo);
-
-    // 1. Construimos la cabecera técnica con los 8 campos (están en leccionActual)
-    let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
-    cuerpo += `---------------------------------------\n`;
-    cuerpo += `ID_LECCION: ${leccionActual.id_leccion || 'N/A'}\n`;
-    cuerpo += `GRUPO: ${leccionActual.grupo || 'N/A'}\n`;
-    cuerpo += `MATERIA: ${leccionActual.materia || 'N/A'}\n`;
-    cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
-    cuerpo += `PROGRESION: ${leccionActual.progresion || 'N/A'}\n`;
-    cuerpo += `ACTIVIDAD: ${leccionActual.titulo_actividad || leccionActual.titulo}\n`;
-    cuerpo += `FECHA_VENCIMIENTO: ${leccionActual.fecha_vencimiento || 'N/A'}\n`;
-    cuerpo += `---------------------------------------\n`;
+function mostrarActividad() {
+    const contenedor = document.getElementById('actividad-viewer-content');
     
-    // 2. Información del Estudiante
-    cuerpo += `ESTUDIANTE: ${nombre}\n`;
-    cuerpo += `MATRÍCULA: ${mat}\n\n`;
+    // Bloqueo: Ocultamos el modal de la lección para que no sea visible al fondo
+    document.getElementById('lesson-modal').style.display = 'none';
     
-    // 3. Detalle de Intentos (lo que ya tenías)
-    cuerpo += `DETALLE DE EVALUACIÓN:\n`;
-    todosIntentos.forEach((intento, i) => {
-        cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
+    document.getElementById('actividad-modal').style.display = 'flex';
+    document.getElementById('actividad-modal').scrollTop = 0;
+
+    // Inyectamos el HTML con TODO reparado mágicamente
+    contenedor.innerHTML = prepararHTMLConRecursos(leccionActual.html, leccionActual.archivos);
+
+    // --- RE-EJECUTAR SCRIPTS ---
+    const scripts = contenedor.querySelectorAll('script');
+    scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        
+        // Convertimos const y let en var para evitar que el juego se rompa 
+        // si el alumno presiona el botón de "Reintentar"
+        let codigoSeguro = oldScript.innerHTML.replace(/\bconst\s+/g, 'var ').replace(/\blet\s+/g, 'var ');
+        newScript.text = codigoSeguro;
+        
+        oldScript.parentNode.replaceChild(newScript, oldScript);
     });
 
-    const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
-    cuerpo += `\nPROMEDIO FINAL: ${promedio}/10\n`;
-    cuerpo += `---------------------------------------`;
-
-    // 4. Ofuscación y Descarga
-    const cuerpoOfuscado = ofuscarReporte(cuerpo);
-    
-    // El nombre del archivo ahora es más descriptivo para el profesor
-    const nombreArchivo = `REP_${leccionActual.id_leccion}_${mat}.toro`;
-    descargarArchivoTxt(cuerpoOfuscado, nombreArchivo); 
-    
-    modal.style.display = 'none';
-    
-    // Si tienes renderizarLecciones global, asegúrate de llamarlo bien
-    if (typeof renderizarLecciones === 'function') {
-        await renderizarLecciones();
-    } else {
-        // Si estás en la vista estudiante, simplemente refrescamos
-        mostrarVistaEstudiante(nombre);
-    }
-};
-            }
+    // =========================================
+    // NUEVO: DESPERTAR AL MINIJUEGO
+    // =========================================
+    // Le damos 200 milisegundos al navegador para procesar los scripts y 
+    // luego forzamos manualmente la orden de arranque que el juego estaba esperando.
+    setTimeout(() => {
+        if (typeof window.onload === 'function') {
+            window.onload(); // Dispara el código original de la ranita
+        } else if (typeof renderItems === 'function' && typeof iniciarTablero === 'function') {
+            iniciarTablero();
+            renderItems();
         }
+    }, 200);
+    // =========================================
+
+    // --- LÓGICA DE DIVISIÓN DE PANTALLA (CRÍTICO) ---
+    // Buscamos las secciones típicas de tus archivos ZIP
+    const secLectura = contenedor.querySelector('#lectura');
+    const secQuiz = contenedor.querySelector('#quiz');
+    const tabs = contenedor.querySelector('.tabs');
+
+    // Forzamos el ocultamiento de la lectura y las pestañas de navegación
+    if (secLectura) secLectura.style.setProperty('display', 'none', 'important');
+    if (tabs) tabs.style.setProperty('display', 'none', 'important');
+    
+    // Forzamos que solo se vea el Quiz
+    if (secQuiz) {
+        secQuiz.style.setProperty('display', 'block', 'important');
+        secQuiz.classList.add('active');
+    }
+
+    // Ocultar botones internos del ZIP que puedan confundir
+    const btnInterno = contenedor.querySelector('.btn');
+    if (btnInterno) btnInterno.style.display = 'none';
+
+    // Configuración del botón Finalizar
+    const btnToro = document.getElementById('btn-finalizar-actividad');
+    btnToro.onclick = async function () {
+        const matricula = localStorage.getItem('toro_matricula');
+        let notaFinal = 0;
+
+        // Detectamos si es el nuevo minijuego de "Relacionar / Camino"
+        const esMinijuego = contenedor.querySelector('.quiz-grid') !== null;
+
+        if (esMinijuego) {
+            // --- EVALUACIÓN DEL MINIJUEGO ---
+            const totalPreguntas = leccionActual.respuestasCorrectas.length || 15;
+            // Contamos cuántas tarjetas verdes (correctas) tiene el alumno en la pantalla
+            const aciertosDOM = contenedor.querySelectorAll('#izquierda .item.correct').length;
+            
+            notaFinal = (aciertosDOM / totalPreguntas) * 10;
+        } else {
+            // --- EVALUACIÓN CLÁSICA (Radios) ---
+            const respuestasProfe = leccionActual.respuestasCorrectas || [];
+            let aciertos = 0;
+            let respondidas = 0;
+
+            respuestasProfe.forEach((res, i) => {
+                const radio = contenedor.querySelector(`input[name="p${i + 1}"]:checked`);
+                if (radio) {
+                    respondidas++;
+                    if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
+                }
+            });
+
+            if (respondidas < respuestasProfe.length) {
+                alert(" Por favor, responde todas las preguntas antes de finalizar.");
+                return;
+            }
+
+            notaFinal = (aciertos / respuestasProfe.length) * 10;
+        }
+
+        // Guardar en indexedDB
+        await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
+
+        document.getElementById('actividad-modal').style.display = 'none';
+        abrirModal('resultado', notaFinal);
+    };
+}
+        
+        // ========== SISTEMA DE MODALES UNIFICADO ==========
+async function abrirModal(tipo, puntos = 0) {
+    const modal = document.getElementById('modal-container');
+    const title = document.getElementById('modal-title');
+    const scoreNum = document.getElementById('score-number');
+    const scoreSec = document.getElementById('score-section');
+    const intentosInfo = document.getElementById('intentos-info');
+    const modalTextInicio = document.getElementById('modal-text-inicio');
+    const btnIzq = document.getElementById('btn-izq');
+    const btnDer = document.getElementById('btn-der');
+    const modalIcon = document.getElementById('modal-icon'); 
+
+    modal.style.display = 'flex';
+
+    const matricula = localStorage.getItem('toro_matricula');
+    const intentosHechos = await obtenerIntentosDB(matricula, leccionActual.titulo);
+    const limiteMax = leccionActual.intentosMax || 3;
+    const restantes = limiteMax - intentosHechos.length;
+
+    // LIMPIEZA VISUAL
+    if (modalIcon) modalIcon.style.display = 'block';
+    modalTextInicio.style.color = "#555"; 
+
+    if (tipo === 'inicio') {
+        title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
+        scoreSec.classList.add('hidden');
+        modalTextInicio.classList.remove('hidden');
+        modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver a consultar el contenido.`;
+
+        btnIzq.innerText = "Volver";
+        btnIzq.style.display = "block";
+        btnIzq.onclick = () => { modal.style.display = 'none'; };
+        
+        btnDer.innerText = "Aceptar";
+        btnDer.onclick = () => { aceptarEIrAActividad(); };
+
+    } else if (tipo === 'resultado') {
+        const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+        title.innerText = `¡${puntos >= 6 ? 'Buen trabajo' : 'Puedes mejorar'}, ${nombre}!`;
+
+        scoreSec.classList.remove('hidden');
+        modalTextInicio.classList.add('hidden');
+
+        scoreNum.innerText = `${puntos.toFixed(1)}/10`;
+        scoreNum.style.color = puntos >= 6 ? '#2e7d32' : '#c62828';
+        intentosInfo.innerHTML = `Número de intentos disponibles: <span style="color: ${restantes > 0 ? '#2e7d32' : '#c62828'}; font-weight: bold;">${restantes}</span>`;
+
+        btnIzq.innerText = "Reintentar";
+        btnIzq.style.display = restantes > 0 ? "block" : "none";
+        btnIzq.onclick = () => { abrirModal('inicio'); };
+
+        btnDer.innerText = "Aceptar Calificación";
+        btnDer.onclick = () => { abrirModal('confirmar_cierre', puntos); }; 
+
+    } else if (tipo === 'confirmar_cierre') {
+        // --- PANTALLA FLOTANTE FINAL ---
+        if (modalIcon) modalIcon.style.display = 'none'; 
+        
+        title.innerText = "¿Estas seguro de finalizar la actividad?";
+        
+        scoreSec.classList.add('hidden');
+        modalTextInicio.classList.remove('hidden');
+        modalTextInicio.innerHTML = `"Al aceptar la calificación, perderás la oportunidad de volver a realizar esta actividad."`;
+        modalTextInicio.style.color = "#777"; 
+
+        btnIzq.innerText = "volver"; 
+        btnIzq.style.display = "block"; 
+        
+        btnIzq.onclick = () => { abrirModal('resultado', puntos); };
+
+        btnDer.innerText = "De acuerdo";
+        btnDer.onclick = async () => {
+            const mat = localStorage.getItem('toro_matricula') || "0000";
+            const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
+            const todosIntentos = await obtenerIntentosDB(mat, leccionActual.titulo);
+
+            // ==========================================
+            // NUEVO: BLOQUEO DEFINITIVO EN BASE DE DATOS
+            // Forzamos a que el límite de intentos sea igual a los que ya hizo.
+            leccionActual.intentosMax = todosIntentos.length;
+            try {
+                const transaction = db.transaction(['lecciones'], 'readwrite');
+                transaction.objectStore('lecciones').put(leccionActual);
+            } catch (e) {
+                console.error("Error al bloquear lección:", e);
+            }
+            // ==========================================
+
+            let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
+            cuerpo += `---------------------------------------\n`;
+            cuerpo += `ID_LECCION: ${leccionActual.id_leccion || 'N/A'}\n`;
+            cuerpo += `GRUPO: ${leccionActual.grupo || 'N/A'}\n`;
+            cuerpo += `MATERIA: ${leccionActual.materia || 'N/A'}\n`;
+            cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
+            cuerpo += `PROGRESION: ${leccionActual.progresion || 'N/A'}\n`;
+            cuerpo += `ACTIVIDAD: ${leccionActual.titulo_actividad || leccionActual.titulo}\n`;
+            cuerpo += `FECHA_VENCIMIENTO: ${leccionActual.fecha_vencimiento || 'N/A'}\n`;
+            cuerpo += `---------------------------------------\n`;
+            
+            cuerpo += `ESTUDIANTE: ${nombre}\n`;
+            cuerpo += `MATRÍCULA: ${mat}\n\n`;
+            
+            cuerpo += `DETALLE DE EVALUACIÓN:\n`;
+            todosIntentos.forEach((intento, i) => {
+                cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
+            });
+
+            const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
+            cuerpo += `\nPROMEDIO FINAL: ${promedio}/10\n`;
+            cuerpo += `---------------------------------------`;
+
+            const cuerpoOfuscado = ofuscarReporte(cuerpo);
+            const nombreArchivo = `REP_${leccionActual.id_leccion}_${mat}.toro`;
+            descargarArchivoTxt(cuerpoOfuscado, nombreArchivo); 
+            
+            modal.style.display = 'none';
+            
+            if (typeof renderizarLecciones === 'function') {
+                // Recargamos la memoria para que el bloqueo surta efecto visual en la pantalla
+                leccionesMemoria = await cargarLeccionesDB(mat);
+                await renderizarLecciones();
+            } else {
+                mostrarVistaEstudiante(nombre);
+            }
+        };
+    }
+}
         // ========== PROCESAMIENTO ZIP ==========
-        async function procesarHTML() {
+       // ========== PROCESAMIENTO ZIP ==========
+async function procesarHTML() {
     const input = document.getElementById('fileInput');
     if (!input.files[0]) return;
 
@@ -844,7 +894,7 @@ async function guardarMateria() {
 
         // --- Excepcion 2.1 Prevención de OOM (Out Of Memory) ---
         // Definimos un límite seguro para teléfonos de gama de entrada (35 MB)
-        const limiteMB = 35;
+        const limiteMB = 700;
         const maxSize = limiteMB * 1024 * 1024;
         
         if (file.size > maxSize) {
@@ -878,10 +928,14 @@ async function guardarMateria() {
         let id_leccion = "", grupo = "", materia = "", parcial = "", 
             progresion = "", nombre_leccion = "", titulo_actividad = "", fecha_vencimiento = "";
 
+        // ---- NUEVO: Creamos un almacén para los archivos físicos ----
+        let archivosBlobs = {}; 
         const promesas = [];
+
         zip.forEach((rutaCompleta, entry) => {
             if (!entry.dir) {
                 const p = entry.async("blob").then(async blob => {
+                    archivosBlobs[rutaCompleta] = blob; // GUARDAMOS EL ARCHIVO REAL
                     window.toro_recursos[rutaCompleta] = URL.createObjectURL(blob);
                     
                     if (rutaCompleta.endsWith('.txt')) {
@@ -907,7 +961,7 @@ async function guardarMateria() {
                         // Lógica original de intentos y respuestas
                         const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
                         if (mInt) intentosTxt = parseInt(mInt[1]);
-                        const mResp = [...texto.matchAll(/RESPUESTA:\s*([a-c])/g)];
+                       const mResp = [...texto.matchAll(/RESPUESTA:\s*(.+)/gi)];
                         respuestasTxt = mResp.map(m => m[1]);
                     }
                 });
@@ -927,6 +981,9 @@ async function guardarMateria() {
             rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1),
             intentosMax: intentosTxt,
             respuestasCorrectas: respuestasTxt,
+
+            // NUEVO: Agregamos el almacén a la base de datos
+            archivos: archivosBlobs, 
 
             // Los 8 campos nuevos integrados
             id_leccion: id_leccion,
