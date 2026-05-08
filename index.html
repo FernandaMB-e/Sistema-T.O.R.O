@@ -651,106 +651,115 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
 function mostrarActividad() {
     const contenedor = document.getElementById('actividad-viewer-content');
     
-    // Bloqueo: Ocultamos el modal de la lección para que no sea visible al fondo
+    // 1. Mostrar la pantalla completa
     document.getElementById('lesson-modal').style.display = 'none';
-    
     document.getElementById('actividad-modal').style.display = 'flex';
     document.getElementById('actividad-modal').scrollTop = 0;
 
-    // Inyectamos el HTML con TODO reparado mágicamente
-    contenedor.innerHTML = prepararHTMLConRecursos(leccionActual.html, leccionActual.archivos);
+    // 2. Generar el HTML con las imágenes y audios ya reparados
+    const htmlReparado = prepararHTMLConRecursos(leccionActual.html, leccionActual.archivos);
 
-    // --- RE-EJECUTAR SCRIPTS ---
-    const scripts = contenedor.querySelectorAll('script');
-    scripts.forEach(oldScript => {
-        const newScript = document.createElement('script');
-        
-        // Convertimos const y let en var para evitar que el juego se rompa 
-        // si el alumno presiona el botón de "Reintentar"
-        let codigoSeguro = oldScript.innerHTML.replace(/\bconst\s+/g, 'var ').replace(/\blet\s+/g, 'var ');
-        newScript.text = codigoSeguro;
-        
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-    });
-
-    // =========================================
-    // NUEVO: DESPERTAR AL MINIJUEGO
-    // =========================================
-    // Le damos 200 milisegundos al navegador para procesar los scripts y 
-    // luego forzamos manualmente la orden de arranque que el juego estaba esperando.
-    setTimeout(() => {
-        if (typeof window.onload === 'function') {
-            window.onload(); // Dispara el código original de la ranita
-        } else if (typeof renderItems === 'function' && typeof iniciarTablero === 'function') {
-            iniciarTablero();
-            renderItems();
-        }
-    }, 200);
-    // =========================================
-
-    // --- LÓGICA DE DIVISIÓN DE PANTALLA (CRÍTICO) ---
-    // Buscamos las secciones típicas de tus archivos ZIP
-    const secLectura = contenedor.querySelector('#lectura');
-    const secQuiz = contenedor.querySelector('#quiz');
-    const tabs = contenedor.querySelector('.tabs');
-
-    // Forzamos el ocultamiento de la lectura y las pestañas de navegación
-    if (secLectura) secLectura.style.setProperty('display', 'none', 'important');
-    if (tabs) tabs.style.setProperty('display', 'none', 'important');
+    // =========================================================
+    // 3. LA MAGIA: AISLAR EL JUEGO EN UNA VENTANA VIRTUAL
+    // =========================================================
+    contenedor.innerHTML = ""; // Limpiamos rastros anteriores
     
-    // Forzamos que solo se vea el Quiz
-    if (secQuiz) {
-        secQuiz.style.setProperty('display', 'block', 'important');
-        secQuiz.classList.add('active');
-    }
+    const iframe = document.createElement('iframe');
+    iframe.id = 'iframe-actividad';
+    iframe.style.width = '100%';
+    iframe.style.minHeight = '700px'; // Le damos altura suficiente
+    iframe.style.border = 'none';
+    iframe.style.overflow = 'hidden';
+    
+    // Inyectamos un escudo protector dentro del HTML del profe antes de meterlo al iframe
+    // Esto obliga al juego a mantener su ancho original y solo "aleja la cámara" para que quepa.
+    const parcheAntiaplastamiento = `
+        <style>
+            body { margin: 0; padding: 10px; background: transparent !important; }
+            .container { 
+                min-width: 850px !important; 
+                margin: 0 auto !important;
+                zoom: 0.40; /* El zoom ocurre adentro del blindaje, sin afectar tu app */
+            }
+            @media (min-width: 500px) { .container { zoom: 0.55; } }
+            @media (min-width: 800px) { .container { zoom: 0.8; } }
+            @media (min-width: 1100px) { .container { zoom: 1; } }
+        </style>
+    `;
+    
+    // Arrancamos el motor del iframe
+    iframe.srcdoc = parcheAntiaplastamiento + htmlReparado;
+    contenedor.appendChild(iframe);
 
-    // Ocultar botones internos del ZIP que puedan confundir
-    const btnInterno = contenedor.querySelector('.btn');
-    if (btnInterno) btnInterno.style.display = 'none';
+    // 4. Cuando el juego termine de cargar internamente, ocultamos la "Lectura"
+    iframe.onload = () => {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const secLectura = iframeDoc.querySelector('#lectura');
+            const secQuiz = iframeDoc.querySelector('#quiz');
+            const tabs = iframeDoc.querySelector('.tabs');
+            const btnInterno = iframeDoc.querySelector('.btn');
 
-    // Configuración del botón Finalizar
-    const btnToro = document.getElementById('btn-finalizar-actividad');
-    btnToro.onclick = async function () {
-        const matricula = localStorage.getItem('toro_matricula');
-        let notaFinal = 0;
-
-        // Detectamos si es el nuevo minijuego de "Relacionar / Camino"
-        const esMinijuego = contenedor.querySelector('.quiz-grid') !== null;
-
-        if (esMinijuego) {
-            // --- EVALUACIÓN DEL MINIJUEGO ---
-            const totalPreguntas = leccionActual.respuestasCorrectas.length || 15;
-            // Contamos cuántas tarjetas verdes (correctas) tiene el alumno en la pantalla
-            const aciertosDOM = contenedor.querySelectorAll('#izquierda .item.correct').length;
+            if (secLectura) secLectura.style.setProperty('display', 'none', 'important');
+            if (tabs) tabs.style.setProperty('display', 'none', 'important');
+            if (btnInterno) btnInterno.style.display = 'none';
             
-            notaFinal = (aciertosDOM / totalPreguntas) * 10;
-        } else {
-            // --- EVALUACIÓN CLÁSICA (Radios) ---
-            const respuestasProfe = leccionActual.respuestasCorrectas || [];
-            let aciertos = 0;
-            let respondidas = 0;
+            if (secQuiz) {
+                secQuiz.style.setProperty('display', 'block', 'important');
+                secQuiz.classList.add('active');
+            }
+        } catch(e) {
+            console.log("Aislamiento de pestañas completado.");
+        }
+    };
 
-            respuestasProfe.forEach((res, i) => {
-                const radio = contenedor.querySelector(`input[name="p${i + 1}"]:checked`);
-                if (radio) {
-                    respondidas++;
-                    if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
+    // =========================================================
+    // 5. EVALUACIÓN (Extrayendo las respuestas desde el Iframe)
+    // =========================================================
+    const btnToro = document.getElementById('btn-finalizar-actividad');
+    
+    // Evitamos que se acumulen clics si entra y sale de varias actividades
+    btnToro.onclick = async function () {
+        try {
+            const iframeDoc = document.getElementById('iframe-actividad').contentDocument || document.getElementById('iframe-actividad').contentWindow.document;
+            const matricula = localStorage.getItem('toro_matricula');
+            let notaFinal = 0;
+
+            const esMinijuego = iframeDoc.querySelector('.quiz-grid') !== null;
+
+            if (esMinijuego) {
+                // Modo: Completar Camino (La ranita)
+                const totalPreguntas = leccionActual.respuestasCorrectas.length || 15;
+                const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
+                notaFinal = (aciertosDOM / totalPreguntas) * 10;
+            } else {
+                // Modo: Cuestionario Normal
+                const respuestasProfe = leccionActual.respuestasCorrectas || [];
+                let aciertos = 0;
+                let respondidas = 0;
+
+                respuestasProfe.forEach((res, i) => {
+                    const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
+                    if (radio) {
+                        respondidas++;
+                        if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
+                    }
+                });
+
+                if (respondidas < respuestasProfe.length) {
+                    alert("Por favor, responde todas las preguntas antes de finalizar.");
+                    return;
                 }
-            });
-
-            if (respondidas < respuestasProfe.length) {
-                alert(" Por favor, responde todas las preguntas antes de finalizar.");
-                return;
+                notaFinal = (aciertos / respuestasProfe.length) * 10;
             }
 
-            notaFinal = (aciertos / respuestasProfe.length) * 10;
+            await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
+            document.getElementById('actividad-modal').style.display = 'none';
+            abrirModal('resultado', notaFinal);
+            
+        } catch(error) {
+            console.error("Error al procesar la calificación:", error);
         }
-
-        // Guardar en indexedDB
-        await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
-
-        document.getElementById('actividad-modal').style.display = 'none';
-        abrirModal('resultado', notaFinal);
     };
 }
         
