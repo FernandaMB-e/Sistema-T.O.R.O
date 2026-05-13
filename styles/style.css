@@ -970,3 +970,29 @@ input {
 .btn-toro:active {
     transform: scale(0.95);
 }
+
+
+/* --- VISOR DE PDF INTEGRADO --- */
+.recurso-pdf {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f1f3f5;
+    border-radius: 12px;
+    border: 1px solid #e0e4e8;
+}
+
+.pdf-viewer-frame {
+    width: 100%;
+    height: 500px; /* Altura cómoda para lectura en móvil/tablet */
+    border: none;
+    border-radius: 8px;
+    background: white;
+}
+
+/* En celulares muy pequeños, ajustamos la altura */
+@media (max-width: 480px) {
+    .pdf-viewer-frame {
+        height: 400px;
+    }
+}
+
