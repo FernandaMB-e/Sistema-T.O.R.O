@@ -729,9 +729,11 @@ function mostrarActividad() {
     contenedor.appendChild(iframe);
 
     // 4. Cuando el juego termine de cargar internamente, ocultamos la "Lectura"
+  // 4. Cuando el juego termine de cargar internamente...
     iframe.onload = () => {
         try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const iframeWindow = iframe.contentWindow;
+            const iframeDoc = iframe.contentDocument || iframeWindow.document;
             const secLectura = iframeDoc.querySelector('#lectura');
             const secQuiz = iframeDoc.querySelector('#quiz');
             const tabs = iframeDoc.querySelector('.tabs');
@@ -745,8 +747,34 @@ function mostrarActividad() {
                 secQuiz.style.setProperty('display', 'block', 'important');
                 secQuiz.classList.add('active');
             }
+
+            // =========================================================
+            // RASTREADOR DE ERRORES INYECTADO
+            // =========================================================
+            iframeWindow.erroresRanita = 0; // Iniciamos contador
+            const panelIzq = iframeDoc.getElementById('izquierda');
+            
+            if (panelIzq) { // Si existe, es que estamos en el minijuego
+                // Creamos un observador que vigila si alguna tarjeta se pone roja
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(m => {
+                        const el = m.target;
+                        // Si el otro equipo le añade la clase "wrong" (error)
+                        if (m.attributeName === 'class' && el.classList.contains('wrong')) {
+                            // Usamos un seguro para no contar el mismo error 2 veces por la animación
+                            if (!el.dataset.errorContado) {
+                                iframeWindow.erroresRanita++; // ¡Anotamos el error!
+                                el.dataset.errorContado = "true";
+                                setTimeout(() => { el.dataset.errorContado = ""; }, 600);
+                            }
+                        }
+                    });
+                });
+                // Le decimos al espía que vigile el panel izquierdo
+                observer.observe(panelIzq, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            }
         } catch(e) {
-            console.log("Aislamiento de pestañas completado.");
+            console.log("Aislamiento y espía configurados con éxito.");
         }
     };
 
@@ -765,12 +793,35 @@ function mostrarActividad() {
             const esMinijuego = iframeDoc.querySelector('.quiz-grid') !== null;
 
             if (esMinijuego) {
-                // Modo: Completar Camino (La ranita)
-                const totalPreguntas = leccionActual.respuestasCorrectas.length || 15;
+                const iframeWindow = document.getElementById('iframe-actividad').contentWindow;
+                
+                // Contamos cuántos pares hay en total en la pantalla
+                const itemsIzquierda = iframeDoc.querySelectorAll('#izquierda .item');
+                const n = itemsIzquierda.length || leccionActual.respuestasCorrectas.length || 15;
+                
+                // Contamos cuántos aciertos lleva (para saber si ya terminó)
                 const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
-                notaFinal = (aciertosDOM / totalPreguntas) * 10;
+
+                // VALIDACIÓN EXTRA: No dejar que el alumno envíe si no ha terminado
+                if (aciertosDOM < n) {
+                    alert("¡La ranita aún no llega a su destino! Completa todos los pares antes de finalizar la actividad.");
+                    return; // Bloqueamos el envío
+                }
+
+                const errores = iframeWindow.erroresRanita || 0;
+                const resta = 10 / (n * 2); // Fórmula proporcionada
+                
+                // Partimos de 10 y le restamos el castigo por cada error cometido
+                let calificacion = 10 - (errores * resta);
+                
+                if (calificacion < 0) calificacion = 0;
+                
+                notaFinal = calificacion;
+                
+                // Opcional: Imprimir en consola para que veas la magia
+                console.log(`Pares: ${n} | Errores: ${errores} | Resta por error: ${resta} | Nota Final: ${notaFinal.toFixed(2)}`);
             } else {
-                // Modo: Cuestionario Normal
+                // Modo: Cuestionario Normal y Verdadero/Falso
                 const respuestasProfe = leccionActual.respuestasCorrectas || [];
                 let aciertos = 0;
                 let respondidas = 0;
@@ -779,14 +830,36 @@ function mostrarActividad() {
                     const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
                     if (radio) {
                         respondidas++;
-                        if (radio.value.trim().toLowerCase() === res.trim().toLowerCase()) aciertos++;
+                        
+                        // Normalizamos a minúsculas para comparar sin importar cómo lo escribió el profe
+                        let valorHTML = radio.value.trim().toLowerCase();
+                        let respuestaTXT = res.trim().toLowerCase();
+
+                        // ===================================================
+                        // TRADUCTOR INTELIGENTE VERDADERO/FALSO
+                        // El HTML manda "v" o "f", pero el TXT dice "verdadero" o "falso"
+                        // ===================================================
+                        if (valorHTML === 'v' && respuestaTXT === 'verdadero') {
+                            aciertos++;
+                        } else if (valorHTML === 'f' && respuestaTXT === 'falso') {
+                            aciertos++;
+                        } 
+                        // ===================================================
+                        // LÓGICA CLÁSICA PARA OPCIÓN MÚLTIPLE NORMAL
+                        // ===================================================
+                        else if (valorHTML === respuestaTXT) {
+                            aciertos++;
+                        }
                     }
                 });
 
+                // Validación de que no deje preguntas en blanco
                 if (respondidas < respuestasProfe.length) {
-                    alert("Por favor, responde todas las preguntas antes de finalizar.");
-                    return;
+                    alert(`¡Alto ahí! Te faltan preguntas por responder. Llevas ${respondidas} de ${respuestasProfe.length}.`);
+                    return; // Bloqueamos el envío
                 }
+                
+                // Calculamos la nota (regla de 3 para sacar el 10 perfecto)
                 notaFinal = (aciertos / respuestasProfe.length) * 10;
             }
 
@@ -1014,10 +1087,13 @@ async function procesarHTML() {
                         fecha_vencimiento = extraer("FECHA_VENCIMIENTO");
 
                         // Lógica original de intentos y respuestas
+                        // Lógica original de intentos y respuestas compatible con Verdadero/Falso
                         const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
                         if (mInt) intentosTxt = parseInt(mInt[1]);
-                        const mResp = [...texto.matchAll(/RESPUESTA:\s*(.+)/gi)];
-                        respuestasTxt = mResp.map(m => m[1]);
+
+                        // NUEVO: Busca "RESPUESTA:" o "RESPUESTA_CORRECTA:"
+                        const mResp = [...texto.matchAll(/(?:RESPUESTA|RESPUESTA_CORRECTA):\s*(.+)/gi)];
+                        respuestasTxt = mResp.map(m => m[1].trim());
                     }
                 });
                 promesas.push(p);
@@ -1029,8 +1105,9 @@ async function procesarHTML() {
 
         await Promise.all(promesas);
         htmlOriginal = await zip.file(rutaHtml).async("string");
+        
 
-        // Construcción del objeto leccionNueva con los parámetros técnicos y los del cliente
+        // Construcción del objeto leccionNueva con los parámetros técnicos y los del cl                        iente
         const leccionNueva = {
             // Campos originales preservados
             titulo: tituloNuevo,
