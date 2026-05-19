@@ -164,7 +164,7 @@ function inicializarDB() {
             // Asociamos la lección a la materia actual que está en sesión
             materia_id: parseInt(sessionStorage.getItem('materia_id_actual')),
             
-            // Los 8 campos que pidió el cliente
+  
             id_leccion: leccion.id_leccion,
             grupo: leccion.grupo,
             materia: leccion.materia,
@@ -1238,8 +1238,10 @@ async function procesarHTML() {
             </div>
 
             <form id="loginForm">
-                <input type="text" id="matricula" placeholder="Matrícula" required class="login-input">
-                <input type="text" id="nombre" placeholder="Nombre completo" required class="login-input">
+                <input type="text" id="matricula" placeholder="Matrícula" required class="login-input"
+                       oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
+                <input type="text" id="nombre" placeholder="Nombre completo" required class="login-input"
+                       oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '')">
                 <button type="submit" class="btn-toro btn-continuar-login">Continuar</button>
             </form>
         </div>
