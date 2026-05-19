@@ -118,11 +118,11 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('\n======================================================');
     console.log('         SISTEMA T.O.R.O. - SERVIDOR ACTIVO');
     console.log('======================================================');
-    console.log(` 🏫 Infraestructura:   CBTA N.251`);
-    console.log(` 🔌 Puerto de escucha:  ${PORT}`);
-    console.log(` 📂 Directorio Base:   ${baseDir}`);
+    console.log(` Infraestructura:   CBTA N.251`);
+    console.log(` Puerto de escucha:  ${PORT}`);
+    console.log(`Directorio Base:   ${baseDir}`);
     console.log('------------------------------------------------------');
-    console.log(' 🌐 ENLACES DE ACCESO EN LA RED LOCAL (LAN):');
+    console.log('  ENLACES DE ACCESO EN LA RED LOCAL (LAN):');
     console.log(`    [1] App Estudiantil Principal:`);
     console.log(`        http://${LAN_IP}:${PORT}`);
     console.log();
@@ -132,5 +132,5 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`    [3] Panel de Control Docente (Profesor):`);
     console.log(`        http://${LAN_IP}:${PORT}/panel-profe.html`);
     console.log('======================================================');
-    console.log(' 🖥️  MONITOR DE ACTIVIDAD EN TIEMPO REAL:');
+    console.log('  MONITOR DE ACTIVIDAD EN TIEMPO REAL:');
 });
