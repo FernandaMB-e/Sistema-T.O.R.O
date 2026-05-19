@@ -317,6 +317,24 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
         request.onerror = () => reject(request.error);
     });
 }
+        //NUEVO: función para buscar una lección por título sin importar la materia, útil para detectar duplicados globales
+        // A diferencia de cargarLeccionesDB, esta función NO filtra por materia_id,
+        // por lo que detecta duplicados aunque estén en materias distintas.
+        function buscarLeccionGlobalDB(matricula, titulo) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['lecciones'], 'readonly');
+                const store = transaction.objectStore('lecciones');
+                const index = store.index('matricula');
+                const request = index.getAll(matricula);
+ 
+                request.onsuccess = () => {
+                    // Sin filtro de materia_id: revisamos todas las lecciones del alumno
+                    const encontrada = request.result.find(lec => lec.titulo === titulo);
+                    resolve(encontrada || null); // Devuelve la lección si existe, o null
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
 
         // guardar intento de calificación
         function guardarIntentoDB(matricula, leccionTitulo, calificacion) {
@@ -1023,18 +1041,32 @@ async function procesarHTML() {
             return;
         }
         // ----------------------------------------------------------
-
-        const leccionesExistentes = await cargarLeccionesDB(matricula);
-        const yaExiste = leccionesExistentes.some(lec => lec.titulo === tituloNuevo);
-
-        if (yaExiste) {
-            alert(` Ya has importado la lección "${tituloNuevo}".\nNo puedes importar la misma lección dos veces.`);
+        //  NUEVO: Buscamos el título en TODAS las materias del alumno, no solo la actual 
+        // Si la función encuentra una coincidencia, devuelve el objeto lección con su materia_id.
+        // Si no encuentra nada, devuelve null y el alumno puede continuar.
+        const leccionDuplicada = await buscarLeccionGlobalDB(matricula, tituloNuevo);
+ 
+        if (leccionDuplicada) {
+            //  NUEVO: Buscamos el nombre de la materia donde ya existe para el mensaje 
+            // Abrimos una transacción de solo lectura sobre "materias" y buscamos por el ID guardado.
+            const transaction = db.transaction(['materias'], 'readonly');
+            const store = transaction.objectStore('materias');
+            const reqMateria = store.get(leccionDuplicada.materia_id);
+ 
+            reqMateria.onsuccess = () => {
+                const nombreMateria = reqMateria.result?.nombre || 'otra materia';
+                alert(`La lección "${tituloNuevo}" ya fue importada en "${nombreMateria}".\nNo puedes importar la misma lección en dos materias diferentes.`);
+            };
+            reqMateria.onerror = () => {
+                alert(`La lección "${tituloNuevo}" ya existe en otra materia. No puedes importarla de nuevo.`);
+            };
+ 
             input.value = '';
             document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
             document.getElementById('file-status').style.color = '#888';
             return;
         }
-
+            // ----------------------------------------------------------
         const arrayBuffer = await file.arrayBuffer();
         const zip = await JSZip.loadAsync(arrayBuffer);
 
