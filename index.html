@@ -180,7 +180,7 @@ function inicializarDB() {
             respuestasCorrectas: leccion.respuestasCorrectas,
 
             // ==================================================
-            // ¡EL SECRETO ESTÁ AQUÍ! 
+           
             // Ahora sí le decimos a la DB que guarde los videos, PDFs y audios
             archivos: leccion.archivos, 
             // ==================================================
@@ -946,31 +946,31 @@ async function abrirModal(tipo, puntos = 0) {
         btnDer.innerText = "De acuerdo";
         btnDer.onclick = async () => {
             const mat = localStorage.getItem('toro_matricula') || "0000";
-            const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-            const todosIntentos = await obtenerIntentosDB(mat, leccionActual.titulo);
+    const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
 
-            // ==========================================
-            // NUEVO: BLOQUEO DEFINITIVO EN BASE DE DATOS
-            // Forzamos a que el límite de intentos sea igual a los que ya hizo.
-            leccionActual.intentosMax = todosIntentos.length;
-            try {
-                const transaction = db.transaction(['lecciones'], 'readwrite');
-                transaction.objectStore('lecciones').put(leccionActual);
-            } catch (e) {
-                console.error("Error al bloquear lección:", e);
-            }
-            // ==========================================
+    // --- NUEVO: RESCATE DE DATOS ---
+    // Buscamos el ID de la lección que está activa en la pantalla
+    const idActivo = leccionActual.id; // Asegúrate de tener este ID a mano
+    const leccionEnDB = await obtenerLeccionPorId(idActivo); // Una función que busque en DB
+    
+    // Si no tenemos la lección, usamos la actual, pero con seguridad
+    const datos = leccionEnDB || leccionActual; 
+    // -------------------------------
 
-            let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
-            cuerpo += `---------------------------------------\n`;
-            cuerpo += `ID_LECCION: ${leccionActual.id_leccion || 'N/A'}\n`;
-            cuerpo += `GRUPO: ${leccionActual.grupo || 'N/A'}\n`;
-            cuerpo += `MATERIA: ${leccionActual.materia || 'N/A'}\n`;
-            cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
-            cuerpo += `PROGRESION: ${leccionActual.progresion || 'N/A'}\n`;
-            cuerpo += `ACTIVIDAD: ${leccionActual.titulo_actividad || leccionActual.titulo}\n`;
-            cuerpo += `FECHA_VENCIMIENTO: ${leccionActual.fecha_vencimiento || 'N/A'}\n`;
-            cuerpo += `---------------------------------------\n`;
+    const todosIntentos = await obtenerIntentosDB(mat, datos.titulo);
+
+    // ... (sigue tu lógica de bloqueo de intentos) ...
+
+    let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
+    cuerpo += `---------------------------------------\n`;
+    // Usamos 'datos' en lugar de 'leccionActual'
+    cuerpo += `ID_LECCION: ${datos.id_leccion || 'N/A'}\n`;
+    cuerpo += `GRUPO: ${datos.grupo || 'N/A'}\n`;
+    cuerpo += `MATERIA: ${datos.materia || 'N/A'}\n`;
+    cuerpo += `PARCIAL: ${datos.parcial || 'N/A'}\n`;
+    cuerpo += `PROGRESION: ${datos.progresion || 'N/A'}\n`;
+    cuerpo += `ACTIVIDAD: ${datos.titulo_actividad || datos.titulo}\n`;
+    cuerpo += `FECHA_VENCIMIENTO: ${datos.fecha_vencimiento || 'N/A'}\n`;
             
             cuerpo += `ESTUDIANTE: ${nombre}\n`;
             cuerpo += `MATRÍCULA: ${mat}\n\n`;
@@ -983,7 +983,7 @@ async function abrirModal(tipo, puntos = 0) {
             const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
             cuerpo += `\nPROMEDIO FINAL: ${promedio}/10\n`;
             cuerpo += `---------------------------------------`;
-
+            console.log("CONTENIDO DE LECCION ACTUAL:", leccionActual);
             const cuerpoOfuscado = ofuscarReporte(cuerpo);
             const nombreArchivo = `REP_${leccionActual.id_leccion}_${mat}.toro`;
             descargarArchivoTxt(cuerpoOfuscado, nombreArchivo); 
@@ -999,6 +999,16 @@ async function abrirModal(tipo, puntos = 0) {
             }
         };
     }
+}
+
+async function obtenerLeccionPorId(id) {
+    return new Promise((resolve) => {
+        const transaction = db.transaction(['lecciones'], 'readonly');
+        const store = transaction.objectStore('lecciones');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null);
+    });
 }
         
        // ========== PROCESAMIENTO ZIP ==========
