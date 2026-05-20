@@ -981,22 +981,26 @@ async function abrirModal(tipo, puntos = 0) {
 
     let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
     cuerpo += `---------------------------------------\n`;
-    // Usamos 'datos' en lugar de 'leccionActual'
-    cuerpo += `ID_LECCION: ${datos.id_leccion || 'N/A'}\n`;
-    cuerpo += `GRUPO: ${datos.grupo || 'N/A'}\n`;
-    cuerpo += `MATERIA: ${datos.materia || 'N/A'}\n`;
-    cuerpo += `PARCIAL: ${datos.parcial || 'N/A'}\n`;
-    cuerpo += `PROGRESION: ${datos.progresion || 'N/A'}\n`;
-    cuerpo += `ACTIVIDAD: ${datos.titulo_actividad || datos.titulo}\n`;
-    cuerpo += `FECHA_VENCIMIENTO: ${datos.fecha_vencimiento || 'N/A'}\n`;
-            
-            cuerpo += `ESTUDIANTE: ${nombre}\n`;
-            cuerpo += `MATRÍCULA: ${mat}\n\n`;
-            
-            cuerpo += `DETALLE DE EVALUACIÓN:\n`;
-            todosIntentos.forEach((intento, i) => {
-                cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
-            });
+    cuerpo += `ID_LECCION: ${leccionActual.id_leccion || leccionActual.id || 'N/A'}\n`;
+    cuerpo += `GRUPO: ${leccionActual.grupo || 'N/A'}\n`;
+    cuerpo += `MATERIA: ${leccionActual.materia || 'N/A'}\n`;
+    cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
+    
+   
+    cuerpo += `PROGRESION: ${leccionActual.tema || 'N/A'}\n`; 
+    
+   
+    cuerpo += `ACTIVIDAD: ${leccionActual.titulo || 'N/A'}\n`; 
+    cuerpo += `---------------------------------------\n`;
+    
+    
+    cuerpo += `ESTUDIANTE: ${nombre}\n`;
+    cuerpo += `MATRICULA: ${mat}\n\n`; 
+    
+    cuerpo += `DETALLE DE EVALUACIÓN:\n`;
+    todosIntentos.forEach((intento, i) => {
+        cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
+    });
 
             const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
             cuerpo += `\nPROMEDIO FINAL: ${promedio}/10\n`;
@@ -1123,9 +1127,9 @@ async function procesarHTML() {
                         grupo = extraer("GRUPO");
                         materia = extraer("MATERIA");
                         parcial = extraer("PARCIAL");
-                        progresion = extraer("PROGRESION");
-                        nombre_leccion = extraer("NOMBRE_LECCION");
-                        titulo_actividad = extraer("TITULO_ACTIVIDAD");
+                        progresion = extraer("TEMA");
+                        nombre_leccion = extraer("TITULO");
+                        titulo_actividad = extraer("NOMBRE_ACTIVIDAD");
                         fecha_vencimiento = extraer("FECHA_VENCIMIENTO");
 
                         // Lógica original de intentos y respuestas
