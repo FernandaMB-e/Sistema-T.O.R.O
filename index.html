@@ -66,8 +66,8 @@
             <input type="text" id="reg-grupo" placeholder="Grupo" required>
             <input type="text" id="reg-ciclo" placeholder="Ciclo escolar" required>
         </div>
-        <p class="pie-formulario">"Pulsa para crear materia"</p>
-        <button onclick="guardarMateria()" class="btn-crear-materia">crear</button>
+        <p class="pie-formulario">"Pulsa el botón "Crear" para crear la materia"</p>
+        <button onclick="guardarMateria()" class="btn-crear-materia">Crear</button>
         <button onclick="cerrarModalMateria()" class="btn-cancelar-materia" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
     </div>
 </div>
@@ -1260,7 +1260,7 @@ async function procesarHTML() {
     }
 }
 
-        function mostrarLogin() {
+        function mostrarLogin() { 
            document.getElementById('main-content').innerHTML = `
         <div class="login-container login-centered">
             <h1 class="app-title">T.O.R.O</h1>
