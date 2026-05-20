@@ -66,9 +66,11 @@
             <input type="text" id="reg-grupo" placeholder="Grupo" required>
             <input type="text" id="reg-ciclo" placeholder="Ciclo escolar" required>
         </div>
-        <p class="pie-formulario">"Pulsa para crear materia"</p>
-        <button onclick="guardarMateria()" class="btn-crear-materia">crear</button>
-        <button onclick="cerrarModalMateria()" class="btn-cancelar-materia" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
+        <p class="pie-formulario">Pulsa para crear materia</p>
+        <div class="modal-actions">
+            <button onclick="cerrarModalMateria()" class="btn-cancelar-materia">Cancelar</button>
+            <button onclick="guardarMateria()" class="btn-crear-materia">Crear</button>
+        </div>
     </div>
 </div>
 
@@ -470,8 +472,10 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
                 <div id="file-status" class="file-status">Ningún archivo seleccionado</div>
             </div>
 
-            <p class="info-text">"Pulsa para cargar las lecciones"</p>
-            <button class="btn-toro btn-green" onclick="procesarHTML()">Cargar archivos</button>
+            <div class="upload-actions">
+                <p class="info-text">Pulsa para cargar las lecciones</p>
+                <button class="btn-toro btn-green action-button" onclick="procesarHTML()">Cargar archivos</button>
+            </div>
 
         </div>
     `;
@@ -987,10 +991,10 @@ async function abrirModal(tipo, puntos = 0) {
     cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
     
    
-    cuerpo += `PROGRESION: ${leccionActual.progresion || 'N/A'}\n`; 
+    cuerpo += `PROGRESION: ${leccionActual.tema || 'N/A'}\n`; 
     
    
-    cuerpo += `ACTIVIDAD: ${leccionActual.titulo_actividad || 'N/A'}\n`; 
+    cuerpo += `ACTIVIDAD: ${leccionActual.titulo || 'N/A'}\n`; 
     cuerpo += `---------------------------------------\n`;
     
     
@@ -1211,20 +1215,14 @@ async function procesarHTML() {
         // ========== UTILIDADES ==========
 
         
-       function ofuscarReporte(texto) {
-    // NUEVO PASO: Calculamos la firma matemática (longitud del texto * 77)
-    const firma = (texto.length * 77).toString();
-    
-    // NUEVO PASO: Unimos el texto del reporte y la firma con el delimitador "||"
-    const textoConFirma = texto + "||" + firma;
-
-    // Paso 1: Aplicamos la rotación de caracteres (+3) a toda la cadena unida (texto + firma)
-    const textoModificado = textoConFirma.split('').map(char => 
-        String.fromCharCode(char.charCodeAt(0) + 3) 
-    ).join('');
-    
-    // Paso 2: Convertir a Base64 asegurando la compatibilidad de acentos
-    return btoa(unescape(encodeURIComponent(textoModificado)));
+        function ofuscarReporte(texto) {
+            // Paso 1: Una simple rotación de caracteres o "sal" para que no sea Base64 puro
+            const textoModificado = texto.split('').map(char => 
+                String.fromCharCode(char.charCodeAt(0) + 3) // Desplaza cada carácter 3 posiciones
+            ).join('');
+            
+            // Paso 2: Convertir a Base64
+            return btoa(unescape(encodeURIComponent(textoModificado)));
 }
         
         function descargarArchivoTxt(contenido, nombreArchivo) {
