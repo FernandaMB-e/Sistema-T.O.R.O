@@ -1211,14 +1211,20 @@ async function procesarHTML() {
         // ========== UTILIDADES ==========
 
         
-        function ofuscarReporte(texto) {
-            // Paso 1: Una simple rotación de caracteres o "sal" para que no sea Base64 puro
-            const textoModificado = texto.split('').map(char => 
-                String.fromCharCode(char.charCodeAt(0) + 3) // Desplaza cada carácter 3 posiciones
-            ).join('');
-            
-            // Paso 2: Convertir a Base64
-            return btoa(unescape(encodeURIComponent(textoModificado)));
+       function ofuscarReporte(texto) {
+    // NUEVO PASO: Calculamos la firma matemática (longitud del texto * 77)
+    const firma = (texto.length * 77).toString();
+    
+    // NUEVO PASO: Unimos el texto del reporte y la firma con el delimitador "||"
+    const textoConFirma = texto + "||" + firma;
+
+    // Paso 1: Aplicamos la rotación de caracteres (+3) a toda la cadena unida (texto + firma)
+    const textoModificado = textoConFirma.split('').map(char => 
+        String.fromCharCode(char.charCodeAt(0) + 3) 
+    ).join('');
+    
+    // Paso 2: Convertir a Base64 asegurando la compatibilidad de acentos
+    return btoa(unescape(encodeURIComponent(textoModificado)));
 }
         
         function descargarArchivoTxt(contenido, nombreArchivo) {
