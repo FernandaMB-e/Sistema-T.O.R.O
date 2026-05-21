@@ -589,8 +589,8 @@ async function guardarMateria() {
                     card.innerHTML = `
             <span>📖 ${lec.titulo}</span> 
             
-        `;
-                contenedor.appendChild(card);
+        `;      <!--  Se cambio el metodo 'appendChild' por 'prepend' para invertir el encolamiento-->
+                contenedor.prepend(card);
             }
         }
 
