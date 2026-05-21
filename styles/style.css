@@ -49,13 +49,13 @@ body {
     color: var(--color-text-blue);
     font-size: 15px;
     text-align: left;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .section-divider {
     border: 0;
     border-top: 1px solid #eee;
-    margin: 12px 0;
+    margin: 8px 0;
 }
 
 .upload-icon {
@@ -135,7 +135,7 @@ body {
     border: 1px solid var(--border-lesson-container);
     border-radius: 20px;
     padding: 20px 15px;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .lesson-card {
@@ -159,8 +159,8 @@ body {
 .upload-area {
     border: 2px dashed #ccc;
     border-radius: 15px;
-    padding: 20px;
-    margin: 10px 0 5px;
+    padding: 18px;
+    margin: 8px 0 4px;
     background: #fff;
     display: flex;
     flex-direction: column;
