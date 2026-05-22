@@ -982,6 +982,17 @@ async function abrirModal(tipo, puntos = 0) {
     const todosIntentos = await obtenerIntentosDB(mat, datos.titulo);
 
     // ... (sigue tu lógica de bloqueo de intentos) ...
+    // BLOQUEO DEFINITIVO: forzamos intentosMax igual a intentos ya hechos
+leccionActual.intentosMax = todosIntentos.length;
+try {
+    const transaction = db.transaction(['lecciones'], 'readwrite');
+    transaction.objectStore('lecciones').put(leccionActual);
+} catch (e) {
+    console.error("Error al bloquear lección:", e);
+}
+
+
+
 
     let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
     cuerpo += `---------------------------------------\n`;
@@ -1016,15 +1027,10 @@ async function abrirModal(tipo, puntos = 0) {
             
             modal.style.display = 'none';
             
-            if (typeof renderizarLecciones === 'function') {
-                // Recargamos la memoria para que el bloqueo surta efecto visual en la pantalla
-                leccionesMemoria = await cargarLeccionesDB(mat);
-                await renderizarLecciones();
-            } else {
-                mostrarVistaEstudiante(nombre);
-            }
-        };
-    }
+            leccionesMemoria = await cargarLeccionesDB(mat);
+            await renderizarLecciones();
+                    };
+                }
 }
 
 async function obtenerLeccionPorId(id) {
