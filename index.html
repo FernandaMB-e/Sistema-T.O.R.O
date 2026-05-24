@@ -805,94 +805,117 @@ function mostrarActividad() {
     // =========================================================
     const btnToro = document.getElementById('btn-finalizar-actividad');
     
-    // Evitamos que se acumulen clics si entra y sale de varias actividades
-    btnToro.onclick = async function () {
-        try {
-            const iframeDoc = document.getElementById('iframe-actividad').contentDocument || document.getElementById('iframe-actividad').contentWindow.document;
-            const matricula = localStorage.getItem('toro_matricula');
-            let notaFinal = 0;
+   btnToro.onclick = async function () {
+    try {
+        const iframeDoc = document.getElementById('iframe-actividad').contentDocument || document.getElementById('iframe-actividad').contentWindow.document;
+        const iframeWindow = document.getElementById('iframe-actividad').contentWindow;
+        const matricula = localStorage.getItem('toro_matricula');
+        let notaFinal = 0;
 
-            const esMinijuego = iframeDoc.querySelector('.quiz-grid') !== null;
+        // ==========================================
+        // 1. IDENTIFICACIÓN AUTOMÁTICA DE LA ACTIVIDAD
+        // ==========================================
+        // Detectamos si es sopa leyendo el título de la actividad (que definiste en el ZIP)
+        const nombreActividad = (leccionActual.titulo_actividad || leccionActual.titulo || "").toLowerCase();
+        const esSopa = nombreActividad.includes('sopa'); 
+        
+        // Es ranita si tiene la clase quiz-grid PERO NO es la sopa de letras
+        const esRanita = iframeDoc.querySelector('.quiz-grid') !== null && !esSopa;
 
-            if (esMinijuego) {
-                const iframeWindow = document.getElementById('iframe-actividad').contentWindow;
-                
-                // Contamos cuántos pares hay en total en la pantalla
-                const itemsIzquierda = iframeDoc.querySelectorAll('#izquierda .item');
-                const n = itemsIzquierda.length || leccionActual.respuestasCorrectas.length || 15;
-                
-                // Contamos cuántos aciertos lleva (para saber si ya terminó)
-                const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
+        if (esRanita) {
+            // ==========================================
+            // LÓGICA 1: SALTO DE LA RANITA
+            // ==========================================
+            const itemsIzquierda = iframeDoc.querySelectorAll('#izquierda .item');
+            const n = itemsIzquierda.length || leccionActual.respuestasCorrectas.length || 15;
+            const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
 
-                // VALIDACIÓN EXTRA: No dejar que el alumno envíe si no ha terminado
-                if (aciertosDOM < n) {
-                    alert("¡La ranita aún no llega a su destino! Completa todos los pares antes de finalizar la actividad.");
-                    return; // Bloqueamos el envío
-                }
-
-                const errores = iframeWindow.erroresRanita || 0;
-                const resta = 10 / (n * 2); // Fórmula proporcionada
-                
-                // Partimos de 10 y le restamos el castigo por cada error cometido
-                let calificacion = 10 - (errores * resta);
-                
-                if (calificacion < 0) calificacion = 0;
-                
-                notaFinal = calificacion;
-                
-                // Opcional: Imprimir en consola para que veas la magia
-                console.log(`Pares: ${n} | Errores: ${errores} | Resta por error: ${resta} | Nota Final: ${notaFinal.toFixed(2)}`);
-            } else {
-                // Modo: Cuestionario Normal y Verdadero/Falso
-                const respuestasProfe = leccionActual.respuestasCorrectas || [];
-                let aciertos = 0;
-                let respondidas = 0;
-
-                respuestasProfe.forEach((res, i) => {
-                    const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
-                    if (radio) {
-                        respondidas++;
-                        
-                        // Normalizamos a minúsculas para comparar sin importar cómo lo escribió el profe
-                        let valorHTML = radio.value.trim().toLowerCase();
-                        let respuestaTXT = res.trim().toLowerCase();
-
-                        // ===================================================
-                        // TRADUCTOR INTELIGENTE VERDADERO/FALSO
-                        // El HTML manda "v" o "f", pero el TXT dice "verdadero" o "falso"
-                        // ===================================================
-                        if (valorHTML === 'v' && respuestaTXT === 'verdadero') {
-                            aciertos++;
-                        } else if (valorHTML === 'f' && respuestaTXT === 'falso') {
-                            aciertos++;
-                        } 
-                        // ===================================================
-                        // LÓGICA CLÁSICA PARA OPCIÓN MÚLTIPLE NORMAL
-                        // ===================================================
-                        else if (valorHTML === respuestaTXT) {
-                            aciertos++;
-                        }
-                    }
-                });
-
-                // Validación de que no deje preguntas en blanco
-                if (respondidas < respuestasProfe.length) {
-                    alert(`¡Alto ahí! Te faltan preguntas por responder. Llevas ${respondidas} de ${respuestasProfe.length}.`);
-                    return; // Bloqueamos el envío
-                }
-                
-                // Calculamos la nota (regla de 3 para sacar el 10 perfecto)
-                notaFinal = (aciertos / respuestasProfe.length) * 10;
+            if (aciertosDOM < n) {
+                alert("¡La ranita aún no llega a su destino! Completa todos los pares antes de finalizar la actividad.");
+                return; 
             }
 
-            await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
-            document.getElementById('actividad-modal').style.display = 'none';
-            abrirModal('resultado', notaFinal);
+            const errores = iframeWindow.erroresRanita || 0;
+            const resta = 10 / (n * 2); 
+            let calificacion = 10 - (errores * resta);
+            if (calificacion < 0) calificacion = 0;
             
-        } catch(error) {
-            console.error("Error al procesar la calificación:", error);
+            notaFinal = calificacion;
+            console.log(`Ranita - Pares: ${n} | Errores: ${errores} | Nota Final: ${notaFinal.toFixed(2)}`);
+
+        } else if (esSopa) {
+            // ==========================================
+            // LÓGICA 2: SOPA DE LETRAS (Lectura del DOM)
+            // ==========================================
+            // TAREITA PARA TI: Tienes que abrir la sopa de letras, darle clic derecho -> Inspeccionar,
+            // y ver qué clase CSS tienen las palabras de la lista y qué clase se les pone cuando las encuentran.
+            
+            // Cambia '.clase-de-palabra' por la clase real de la lista (ej. '.word', '.palabra-lista')
+            const palabrasEnLista = iframeDoc.querySelectorAll('#word-list li'); 
+            
+            // Si por alguna razón el DOM falla, toma la longitud (en tu código base vimos que son 4)
+            const total = palabrasEnLista.length || 4; 
+
+            // Seleccionamos únicamente los <li> que ya tienen la clase de "encontrada"
+            const encontradasDOM = iframeDoc.querySelectorAll('#word-list li.found-word').length;
+
+            
+
+            // Calculamos la calificación (si tiene todas, es 10)
+            notaFinal = (encontradasDOM / total) * 10;
+            console.log(`Sopa - Encontradas: ${encontradasDOM}/${total} | Nota Final: ${notaFinal.toFixed(2)}`);
+
+            // Calculamos la calificación
+            notaFinal = (encontradasDOM / total) * 10;
+            console.log(`Sopa - Encontradas: ${encontradasDOM}/${total} | Nota Final: ${notaFinal.toFixed(2)}`);
+
+        } else {
+            // ==========================================
+            // LÓGICA 3: CUESTIONARIOS Y V/F
+            // ==========================================
+            const respuestasProfe = leccionActual.respuestasCorrectas || [];
+            let aciertos = 0;
+            let respondidas = 0;
+
+            respuestasProfe.forEach((res, i) => {
+                const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
+                if (radio) {
+                    respondidas++;
+                    let valorHTML = radio.value.trim().toLowerCase();
+                    let respuestaTXT = res.trim().toLowerCase();
+
+                    if ((valorHTML === 'v' && respuestaTXT === 'verdadero') || 
+                        (valorHTML === 'f' && respuestaTXT === 'falso')) {
+                        aciertos++;
+                    } else if (valorHTML === respuestaTXT) {
+                        aciertos++;
+                    }
+                }
+            });
+
+            if (respondidas < respuestasProfe.length) {
+                alert(`¡Alto ahí! Te faltan preguntas por responder. Llevas ${respondidas} de ${respuestasProfe.length}.`);
+                return;
+            }
+            
+            notaFinal = (aciertos / respuestasProfe.length) * 10;
+            console.log(`Cuestionario - Aciertos: ${aciertos}/${respuestasProfe.length} | Nota Final: ${notaFinal.toFixed(2)}`);
         }
-    };
+
+        // ==========================================
+        // AQUÍ SIGUE TU CÓDIGO DE MOSTRAR MODAL
+        // ==========================================
+        // mostrarModal(notaFinal); ...
+            await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
+
+            document.getElementById('actividad-modal').style.display = 'none';
+
+            abrirModal('resultado', notaFinal);
+
+    } catch (e) {
+        console.error("Error al procesar la calificación:", e);
+    }
+};
 }
         
         // ========== SISTEMA DE MODALES UNIFICADO ==========
@@ -1002,10 +1025,10 @@ try {
     cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
     
    
-    cuerpo += `PROGRESION: ${leccionActual.tema || 'N/A'}\n`; 
+    cuerpo += `PROGRESION: ${leccionActual.progresion || 'N/A'}\n`; 
     
    
-    cuerpo += `ACTIVIDAD: ${leccionActual.titulo || 'N/A'}\n`; 
+    cuerpo += `ACTIVIDAD: ${leccionActual.titulo_actividad || 'N/A'}\n`; 
     cuerpo += `---------------------------------------\n`;
     
     
@@ -1222,13 +1245,19 @@ async function procesarHTML() {
 
         
         function ofuscarReporte(texto) {
-            // Paso 1: Una simple rotación de caracteres o "sal" para que no sea Base64 puro
-            const textoModificado = texto.split('').map(char => 
-                String.fromCharCode(char.charCodeAt(0) + 3) // Desplaza cada carácter 3 posiciones
-            ).join('');
-            
-            // Paso 2: Convertir a Base64
-            return btoa(unescape(encodeURIComponent(textoModificado)));
+    // NUEVO PASO: Calculamos la firma matemática (longitud del texto * 77)
+    const firma = (texto.length * 77).toString();
+    
+    // NUEVO PASO: Unimos el texto del reporte y la firma con el delimitador "||"
+    const textoConFirma = texto + "||" + firma;
+
+    // Paso 1: Aplicamos la rotación de caracteres (+3) a toda la cadena unida (texto + firma)
+    const textoModificado = textoConFirma.split('').map(char => 
+        String.fromCharCode(char.charCodeAt(0) + 3) 
+    ).join('');
+    
+    // Paso 2: Convertir a Base64 asegurando la compatibilidad de acentos
+    return btoa(unescape(encodeURIComponent(textoModificado)));
 }
         
         function descargarArchivoTxt(contenido, nombreArchivo) {
