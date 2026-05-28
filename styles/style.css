@@ -728,16 +728,17 @@ input {
     gap: 14px;
     margin-top: 12px;
 }
-
+/* Botones del modal de crear materia */
 .btn-cancelar-materia {
-    background: #f9f9f9;
-    color: #444;
+    background-color: #777;
+    color: white;
     border: 1px solid #ccc;
     padding: 12px 20px;
     border-radius: 25px;
     cursor: pointer;
     flex: 1;
     min-width: 120px;
+
 }
 
 .btn-crear-materia {
