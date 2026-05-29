@@ -30,8 +30,7 @@ if (!fs.existsSync(dirCalificaciones)) fs.mkdirSync(dirCalificaciones);
 const configCalificaciones = multer.diskStorage({
     destination: (req, file, cb) => cb(null, dirCalificaciones),
     filename: (req, file, cb) => {
-        const nombreUnico = Date.now() + '_' + file.originalname;
-        cb(null, nombreUnico);
+        cb(null, file.originalname);
     }
 });
 const uploadCalificacion = multer({ storage: configCalificaciones });
@@ -47,13 +46,24 @@ const uploadActividad = multer({ storage: configActividades });
 // ========================================================
 // 3. RUTAS PARA EL ALUMNO
 // ========================================================
-// Ver qué actividades hay disponibles
+
+// Ver qué actividades hay disponibles en el servidor (con fecha de modificación)
 app.get('/api/lista-actividades', (req, res) => {
     fs.readdir(dirActividades, (err, archivos) => {
         if (err) return res.status(500).json({ error: 'Error al leer actividades' });
+        
         // Filtramos para que solo muestre archivos .zip
         const zips = archivos.filter(a => a.endsWith('.zip'));
-        res.json(zips);
+        
+        // Extraemos los metadatos de fecha para cada lección
+        const datosActividades = zips.map(archivo => {
+            const rutaCompleta = path.join(dirActividades, archivo);
+            const stats = fs.statSync(rutaCompleta);
+            const fecha = stats.mtime.toISOString().split('T')[0]; // Formato: AAAA-MM-DD
+            return { nombre: archivo, fecha: fecha };
+        });
+        
+        res.json(datosActividades);
     });
 });
 
@@ -84,8 +94,28 @@ app.post('/api/subir-actividad', uploadActividad.single('archivoZip'), (req, res
 app.get('/api/lista-calificaciones', (req, res) => {
     fs.readdir(dirCalificaciones, (err, archivos) => {
         if (err) return res.status(500).json({ error: 'Error al leer calificaciones' });
-        const txts = archivos.filter(a => a.endsWith('.txt'));
-        res.json(txts);
+
+        const filtrados = archivos.filter(a => a.endsWith('.txt') || a.endsWith('.toro'));
+        
+        const datosArchivos = filtrados.map(archivo => {
+            const rutaCompleta = path.join(dirCalificaciones, archivo);
+            const stats = fs.statSync(rutaCompleta);
+            const fecha = stats.mtime.toISOString().split('T')[0]; // Formato: AAAA-MM-DD
+            return { nombre: archivo, fecha: fecha };
+        });
+        
+        res.json(datosArchivos);
+    });
+});
+
+app.post('/api/limpiar-buzon', (req, res) => {
+    fs.readdir(dirCalificaciones, (err, archivos) => {
+        if (err) return res.status(500).json({ error: 'Error al leer el buzón' });
+        
+        archivos.forEach(archivo => {
+            fs.unlinkSync(path.join(dirCalificaciones, archivo));
+        });
+        res.json({ mensaje: '¡El buzón ha sido vaciado correctamente!' });
     });
 });
 

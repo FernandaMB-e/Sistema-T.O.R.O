@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="jszip.min.js"></script>
     <title>T.O.R.O. - Panel del Profesor</title>
     <style>
         :root { --primary: #2e7d32; --dark: #1b5e20; --bg: #f4f6f7; }
@@ -31,20 +32,16 @@
         </div>
 
         <div class="section">
-            <h2>2. Historial de Calificaciones Entregadas (Buzón LAN)</h2>
-            <button onclick="cargarCalificaciones()" class="btn" style="background:#0288d1">🔄 Actualizar Buzón</button>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre del Archivo de Reporte</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaCalificaciones">
-                    <tr><td colspan="2">Presiona actualizar para cargar los datos...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <h2>2. Historial de Calificaciones Entregadas (Buzón LAN)</h2>
+    <div style="margin-bottom: 15px;">
+        <button onclick="cargarCalificaciones()" class="btn" style="background:#0288d1">🔄 Actualizar Buzón</button>
+        <button onclick="limpiarBuzon()" class="btn" style="background:#d32f2f; float:right;">🗑️ Vaciar Buzón Completo</button>
+    </div>
+    
+    <div id="contenedorCalificaciones">
+        <p>Presiona actualizar para cargar los datos...</p>
+    </div>
+</div>
     </div>
 
     <script>
@@ -65,25 +62,96 @@
         };
 
         // Cargar lista de archivos de calificaciones
-        async function cargarCalificaciones() {
-            const tbody = document.getElementById('tablaCalificaciones');
-            try {
-                const res = await fetch('/api/lista-calificaciones');
-                const archivos = await res.json();
-                
-                if (archivos.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="2">No han llegado calificaciones aún.</td></tr>';
-                    return;
-                }
+        let calificacionesGlobal = []; // Guardará los datos temporalmente para poder armar los ZIP
 
-                tbody.innerHTML = archivos.map(archivo => `
-                    <tr>
-                        <td>📂 ${archivo}</td>
-                        <td><a href="/api/descargar-calificacion/${archivo}" class="btn" style="background:#558b2f; text-decoration:none; padding:5px 10px; font-size:14px;">Descargar</a></td>
-                    </tr>
-                `).join('');
-            } catch (err) { tbody.innerHTML = '<tr><td colspan="2">Error al conectar con el servidor.</td></tr>'; }
+async function cargarCalificaciones() {
+    const contenedor = document.getElementById('contenedorCalificaciones');
+    try {
+        const res = await fetch('/api/lista-calificaciones');
+        const archivos = await res.json();
+        
+        if (archivos.length === 0) {
+            contenedor.innerHTML = '<p>No han llegado calificaciones aún.</p>';
+            return;
         }
+
+        calificacionesGlobal = archivos;
+
+        // 1. Agrupar los archivos por su fecha
+        const gruposPorDia = {};
+        archivos.forEach(archivo => {
+            if (!gruposPorDia[archivo.fecha]) {
+                gruposPorDia[archivo.fecha] = [];
+            }
+            gruposPorDia[archivo.fecha].push(archivo.nombre);
+        });
+
+        // 2. Generar bloques HTML separados por cada día
+        let htmlFinal = '';
+        for (const fecha in gruposPorDia) {
+            htmlFinal += `
+                <div style="background:#fff; border:1px solid #ccc; margin-bottom:25px; border-radius:8px; overflow:hidden;">
+                    <div style="background:#e0e0e0; padding:12px 15px; display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0; border:none; padding:0; color:#333;">📅 Entregas del: ${fecha}</h3>
+                        <button onclick="descargarZipDia('${fecha}')" class="btn" style="background:#f57c00; font-size:13px; padding:6px 12px;">📦 Descargar ZIP del día</button>
+                    </div>
+                    <table style="margin-top:0;">
+                        <tbody>
+                            ${gruposPorDia[fecha].map(nombre => `
+                                <tr>
+                                    <td>📂 ${nombre}</td>
+                                    <td style="width: 120px;">
+                                        <a href="/api/descargar-calificacion/${nombre}" class="btn" style="background:#558b2f; text-decoration:none; padding:5px 10px; font-size:14px;">Individual</a>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        contenedor.innerHTML = htmlFinal;
+    } catch (err) { 
+        contenedor.innerHTML = '<p>Error al conectar con el servidor local.</p>'; 
+    }
+}
+
+// Función para empaquetar un día específico en un ZIP
+async function descargarZipDia(fecha) {
+    const zip = new JSZip();
+    // Filtramos solo los nombres de los archivos que coinciden con la fecha solicitada
+    const archivosDelDia = calificacionesGlobal.filter(a => a.fecha === fecha).map(a => a.nombre);
+    
+    // Descargamos cada archivo desde el servidor y lo añadimos al paquete ZIP virtual
+    for (const nombre of archivosDelDia) {
+        const res = await fetch(`/api/descargar-calificacion/${nombre}`);
+        const blob = await res.blob();
+        zip.file(nombre, blob);
+    }
+    
+    // Generamos el archivo .zip final y forzamos la descarga en el navegador
+    const contenidoZip = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(contenidoZip);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reportes_Clase_${fecha}.zip`; // Nombre del paquete
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Función para eliminar permanentemente los archivos del servidor
+async function limpiarBuzon() {
+    if (!confirm('¿Estás seguro de que quieres eliminar TODOS los reportes del servidor? Asegúrate de haber descargado tus ZIPs primero. Esta acción no se puede deshacer.')) return;
+    
+    try {
+        const res = await fetch('/api/limpiar-buzon', { method: 'POST' });
+        const data = await res.json();
+        alert(data.mensaje);
+        cargarCalificaciones(); // Recarga la interfaz para limpiar la pantalla
+    } catch (err) {
+        alert('Hubo un error al intentar vaciar el buzón.');
+    }
+}
     </script>
 </body>
 </html>

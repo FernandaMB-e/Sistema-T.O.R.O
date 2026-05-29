@@ -1043,9 +1043,8 @@ try {
             const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
             cuerpo += `\nPROMEDIO FINAL: ${promedio}/10\n`;
             cuerpo += `---------------------------------------`;
-            console.log("CONTENIDO DE LECCION ACTUAL:", leccionActual);
             const cuerpoOfuscado = ofuscarReporte(cuerpo);
-            const nombreArchivo = `REP_${leccionActual.id_leccion}_${mat}.toro`;
+            const nombreArchivo = `REP_${leccionActual.id_leccion}_${mat}_${nombre}.toro`;
             descargarArchivoTxt(cuerpoOfuscado, nombreArchivo); 
             
             modal.style.display = 'none';
@@ -1324,8 +1323,9 @@ async function procesarHTML() {
 
                 document.getElementById('loginForm').onsubmit = async (e) => { // Agregamos async aquí
                 e.preventDefault();
-                const nom = document.getElementById('nombre').value;
+                const nombre = document.getElementById('nombre').value;
                 const mat = document.getElementById('matricula').value;
+                const nombreLimpio = nombre.replace(/\s+/g, '_');
                 localStorage.setItem('toro_nombre', nom);
                 localStorage.setItem('toro_matricula', mat);
                 localStorage.setItem('toro_datos_listos', 'true');
