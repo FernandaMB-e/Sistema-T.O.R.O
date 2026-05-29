@@ -1178,8 +1178,18 @@ async function procesarHTML() {
         // Recargar lecciones una vez mas
         leccionesMemoria = await cargarLeccionesDB(matricula);
         renderizarLecciones();
-
-        alert(` Importado: ${leccionNueva.titulo}`);
+        
+        // Mensaje visual de éxito dentro de la app
+        const statusDiv = document.getElementById('file-status');
+        statusDiv.innerText = `✅ "${leccionNueva.titulo}" importado con éxito`;
+        statusDiv.style.color = '#2e7d32';
+        statusDiv.style.fontWeight = 'bold';
+        // Regresamos el texto original después de 3 segundos
+        setTimeout(() => {
+            statusDiv.innerText = 'Ningún archivo seleccionado';
+            statusDiv.style.color = '#888';
+            statusDiv.style.fontWeight = 'normal';
+        }, 3000);
 
         // Limpiar input del selector
         input.value = '';
