@@ -673,7 +673,7 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
     tempDiv.innerHTML = htmlFinal;
 
     // ========================================================
-    // 2. ESCÁNER AUTOMÁTICO DE PDFs (EL CAZAFANTASMAS DEFINITIVO)
+    // 2. ESCÁNER AUTOMÁTICO DE PDFs 
     // ========================================================
     let htmlPdfs = "";
     if (leccion.archivos) {
@@ -682,7 +682,7 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
                 const nombrePdf = ruta.split('/').pop(); 
                 let blobUrl = null;
 
-                // 👇 EL SECRETO REVELADO: Guardamos la URL "defectuosa" para poder cazarla
+               
                 const urlDefectuosa = window.toro_recursos ? window.toro_recursos[ruta] : null;
 
                 // Creamos una nueva URL 100% limpia y forzada como PDF
@@ -713,18 +713,18 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
                 // Si por alguna razón extrema no pudimos crear la nueva, usamos la vieja
                 if (!blobUrl) blobUrl = urlDefectuosa;
 
-                // 👇 EL FILTRO CAZAFANTASMAS CORREGIDO 👇
+                
                 const posiblesFantasmas = tempDiv.querySelectorAll('iframe, embed, object');
                 posiblesFantasmas.forEach(el => {
                     const src = el.src || el.data || el.getAttribute('src') || el.getAttribute('data') || "";
                     
-                    // ¡AHORA SÍ! Buscamos si el HTML viejo tiene la "urlDefectuosa" y la eliminamos sin piedad
+                    
                     if (src.includes(nombrePdf) || src === blobUrl || (urlDefectuosa && src === urlDefectuosa)) {
                         el.remove();
                     }
                 });
                 
-                // Dibujamos nuestro visor profesional
+               
                 if (blobUrl) {
                     htmlPdfs += `
                         <div class="recurso-pdf" style="margin-top: 30px; padding: 15px; background: #f1f3f5; border-radius: 12px; border: 1px solid #e0e4e8;">
@@ -747,10 +747,10 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
         });
     }
 
-    // 3. Juntamos el HTML limpio (ya sin letras raras) con nuestro visor de PDF
+    
     contenedor.innerHTML = tempDiv.innerHTML + htmlPdfs;
 
-    // 4. Mostramos la pantalla completa
+   
     document.getElementById('lesson-modal').style.display = 'flex';
 }
 
@@ -1012,19 +1012,25 @@ async function abrirModal(tipo, puntos = 0) {
     if (modalIcon) modalIcon.style.display = 'block';
     modalTextInicio.style.color = "#555"; 
 
-    
+    // Documentación de la tarjeta de la clase InterfazComprobaciónLección
 
+        //Aquí identiifcamos que el usuario quiere iniciar la actividad para esto se muestra la interfaz de
+        // comprobación de lección donde se le pregunta al usuario si esta seguro de continuar y se le informa sobre 
+        // el número de intentos que lleva y el máximo permitido
     if (tipo === 'inicio') {
+        //Aquí mostramos el texto de advertencia 
         title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
         scoreSec.classList.add('hidden');
         modalTextInicio.classList.remove('hidden');
         modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver a consultar el contenido.`;
-
+        //Aquí tenemos el botón volver que regresa a la pantalla de lectura 
         btnIzq.innerText = "Volver";
         btnIzq.style.display = "block";
+        //Esta es la acción que ocurre al presionar el botón volver que es cerrar el modal de comprobación y regresar a la lectura
         btnIzq.onclick = () => { modal.style.display = 'none'; };
-        
+        //Este es el botón de aceptar que inicia la actividad y lleva al usuario a la pantalla de la actividad
         btnDer.innerText = "Aceptar";
+        //Esta es la accción que ocurre al presionar el botón aceptar que es cerrar el modal y abrir el modal de la actividad
         btnDer.onclick = () => { aceptarEIrAActividad(); };
 
     } else if (tipo === 'resultado') {
