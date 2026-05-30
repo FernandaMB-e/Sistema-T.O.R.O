@@ -758,9 +758,14 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
 
         //Esta función se llama cuando el usuario decide iniciar la actividad desde la vista de la lección
 
+        // Tarjeta para la clase ManejadorConfirmarActividad 
+        //Documatado por María Fernanda
+
+
         function iniciarActividadDesdeLeccion() {
             // cierra el modal de la lección para evitar superposiciones y luego llama a abrirmodal con el tipo inicio para
-            //  mostrar el modal de confirmación antes de entrar a la actividad
+            //  mostrar el modal de confirmación antes de entrar a la actividad donde se controla el accceso a la actividad
+            // o el regreso al contenido
             document.getElementById('lesson-modal').style.display = 'none';
             abrirModal('inicio');
         }
