@@ -640,47 +640,65 @@ function verLeccionImportada(index) {
 
     const contenedor = document.getElementById('lesson-viewer-content');
     
-    // 1. Usamos nuestra función maestra para inyectar el HTML
+    // 1. Inyectamos el HTML original del profesor (Aquí nace el fantasma)
     let htmlFinal = prepararHTMLConRecursos(leccion.html, leccion.archivos);
 
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlFinal;
 
     // ========================================================
-    // 2. ESCÁNER AUTOMÁTICO DE PDFs (VERSIÓN BLINDADA)
+    // 2. ESCÁNER AUTOMÁTICO DE PDFs 
     // ========================================================
     let htmlPdfs = "";
     if (leccion.archivos) {
         Object.keys(leccion.archivos).forEach(ruta => {
             if (ruta.toLowerCase().endsWith('.pdf')) {
                 const nombrePdf = ruta.split('/').pop(); 
-                
-                // 👇 MAGIA NUEVA: Garantizamos que la URL exista sí o sí
-                let blobUrl = window.toro_recursos ? window.toro_recursos[ruta] : null;
+                let blobUrl = null;
 
-                // Si la función maestra la ignoró, la rescatamos directo de la base de datos
-                if (!blobUrl && leccion.archivos[ruta]) {
+                // Guardamos la URL "defectuosa" para poder cazarla
+                const urlDefectuosa = window.toro_recursos ? window.toro_recursos[ruta] : null;
+
+                // Creamos una nueva URL 100% limpia y forzada como PDF
+                if (leccion.archivos[ruta]) {
                     const archivoData = leccion.archivos[ruta];
+                    
                     if (archivoData instanceof Blob || archivoData instanceof File) {
-                        blobUrl = URL.createObjectURL(archivoData);
+                        const pdfBlob = new Blob([archivoData], { type: 'application/pdf' });
+                        blobUrl = URL.createObjectURL(pdfBlob);
+                    } else if (archivoData instanceof Uint8Array || archivoData instanceof ArrayBuffer) {
+                        const pdfBlob = new Blob([archivoData], { type: 'application/pdf' });
+                        blobUrl = URL.createObjectURL(pdfBlob);
                     } else if (typeof archivoData === 'string') {
-                        // En caso de que se haya guardado como Base64
-                        blobUrl = archivoData.startsWith('data:') ? archivoData : 'data:application/pdf;base64,' + archivoData;
+                        if (archivoData.substring(0, 4) === '%PDF') {
+                            const bytes = new Uint8Array(archivoData.length);
+                            for (let i = 0; i < archivoData.length; i++) {
+                                bytes[i] = archivoData.charCodeAt(i) & 0xff;
+                            }
+                            const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
+                            blobUrl = URL.createObjectURL(pdfBlob);
+                        } else {
+                            blobUrl = archivoData.startsWith('data:') ? archivoData : 'data:application/pdf;base64,' + archivoData;
+                            blobUrl = blobUrl.replace(/data:.*?;/, 'data:application/pdf;');
+                        }
                     }
                 }
 
-                // 👇 FILTRO QUIRÚRGICO SEGURO
-                // Buscamos sin usar selectores que rompan el código si la URL es muy larga
+                // Si por alguna razón extrema no pudimos crear la nueva, usamos la vieja
+                if (!blobUrl) blobUrl = urlDefectuosa;
+
+            
                 const posiblesFantasmas = tempDiv.querySelectorAll('iframe, embed, object');
                 posiblesFantasmas.forEach(el => {
                     const src = el.src || el.data || el.getAttribute('src') || el.getAttribute('data') || "";
-                    // Si el origen del iframe tiene el nombre del PDF o es nuestra URL, es un fantasma y lo borramos
-                    if (src.includes(nombrePdf) || src === blobUrl) {
+                    
+                    // ¡AHORA SÍ! Buscamos si el HTML viejo tiene la "urlDefectuosa" y la eliminamos sin piedad
+                    if (src.includes(nombrePdf) || src === blobUrl || (urlDefectuosa && src === urlDefectuosa)) {
                         el.remove();
                     }
                 });
                 
-                // Solo dibujamos la tarjeta si logramos crear una URL válida
+                // Dibujamos nuestro visor
                 if (blobUrl) {
                     htmlPdfs += `
                         <div class="recurso-pdf" style="margin-top: 30px; padding: 15px; background: #f1f3f5; border-radius: 12px; border: 1px solid #e0e4e8;">
@@ -703,7 +721,7 @@ function verLeccionImportada(index) {
         });
     }
 
-    // 3. Juntamos el HTML limpio con los visores de PDF
+    // 3. Juntamos el HTML limpio el visor de PDF
     contenedor.innerHTML = tempDiv.innerHTML + htmlPdfs;
 
     // 4. Mostramos la pantalla completa
