@@ -66,9 +66,13 @@
             <input type="text" id="reg-grupo" placeholder="Grupo" required>
             <input type="text" id="reg-ciclo" placeholder="Ciclo escolar" required>
         </div>
-        <p class="pie-formulario">"Pulsa para crear la materia"</p>
-        <button onclick="guardarMateria()" class="btn-crear-materia">Crear</button>
-        <button onclick="cerrarModalMateria()" class="btn-cancelar-materia" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
+
+        <p class="pie-formulario">Pulsa para crear materia</p>
+        <div class="modal-actions">
+            <button onclick="cerrarModalMateria()" class="btn-cancelar-materia">Cancelar</button>
+            <button onclick="guardarMateria()" class="btn-crear-materia">Crear</button>
+        </div>
+
     </div>
 </div>
 
@@ -117,34 +121,60 @@
 let db; 
 
 function inicializarDB() {
+
+ // Retorna una promesa para realizar la apertura
+ // de la base de datos de forma asíncrona.
     return new Promise((resolve, reject) => {
-        // 1. Aumentamos la versión a 3 para forzar la actualización en el navegador
+
+// Abre la base de datos ToroDB.
+// cuando existe una versión anterior.
+// 1. Aumentamos la versión a 3 para forzar la actualización en el navegador
         const request = indexedDB.open("ToroDB", 3);
 
+/**
+* Se ejecuta cuando la base de datos se crea
+ * por primera vez o cuando cambia de versión.
+ */
         request.onupgradeneeded = (e) => {
             const dbInstance = e.target.result;
-            
+
+// Crea el almacén de materias si aún no existe.
             if (!dbInstance.objectStoreNames.contains("materias")) {
                 dbInstance.createObjectStore("materias", { keyPath: "id", autoIncrement: true });
             }
+ // Crea el almacén de lecciones.
             if (!dbInstance.objectStoreNames.contains("lecciones")) {
                 const store = dbInstance.createObjectStore("lecciones", { keyPath: "id", autoIncrement: true });
+
+// Índice que permite buscar lecciones
+// asociadas a una matrícula.
                 store.createIndex("matricula", "matricula", { unique: false });
             }
-            
-            // --- NUEVO: CREAMOS LA TABLA HISTORIAL ---
+
+// Crea el almacén historial para guardar
+// los intentos y avances del alumno.
+// --- NUEVO: CREAMOS LA TABLA HISTORIAL ---
             if (!dbInstance.objectStoreNames.contains("historial")) {
                 const historialStore = dbInstance.createObjectStore("historial", { keyPath: "id", autoIncrement: true });
-                // Creamos el índice compuesto que pide tu función obtenerIntentosDB
+ 
+
+                
+// mediante matrícula y título de lección.
+// Creamos el índice compuesto que pide tu función obtenerIntentosDB
                 historialStore.createIndex("matricula_leccion", ["matricula", "leccionTitulo"], { unique: false });
             }
         };
 
         request.onsuccess = (e) => {
             db = e.target.result; // IMPORTANTE: Sin el 'let' o 'const' para que use la global
+// Notifica que la inicialización fue exitosa.
             resolve(db);
         };
-
+ /**
+ * Se ejecuta cuando ocurre un error durante
+ * la apertura de la base de datos.
+ */
+// Devuelve el error para su manejo.
         request.onerror = (e) => reject(e.target.error);
     });
 }
@@ -164,7 +194,7 @@ function inicializarDB() {
             // Asociamos la lección a la materia actual que está en sesión
             materia_id: parseInt(sessionStorage.getItem('materia_id_actual')),
             
-            // Los 8 campos que pidió el cliente
+  
             id_leccion: leccion.id_leccion,
             grupo: leccion.grupo,
             materia: leccion.materia,
@@ -470,8 +500,10 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
                 <div id="file-status" class="file-status">Ningún archivo seleccionado</div>
             </div>
 
-            <p class="info-text">"Pulsa para cargar las lecciones"</p>
-            <button class="btn-toro btn-green" onclick="procesarHTML()">Cargar archivos</button>
+            <div class="upload-actions">
+                <p class="info-text">Pulsa para cargar las lecciones</p>
+                <button class="btn-toro btn-green action-button" onclick="procesarHTML()">Cargar archivos</button>
+            </div>
 
         </div>
     `;
@@ -589,8 +621,8 @@ async function guardarMateria() {
                     card.innerHTML = `
             <span>📖 ${lec.titulo}</span> 
             
-        `;
-                contenedor.appendChild(card);
+        `;      <!--  Se cambio el metodo 'appendChild' por 'prepend' para invertir el encolamiento-->
+                contenedor.prepend(card);
             }
         }
 
@@ -636,46 +668,91 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
 
     const contenedor = document.getElementById('lesson-viewer-content');
     
-    // 1. Usamos nuestra función maestra para inyectar el HTML reparado
+    // 1. Inyectamos el HTML original del profesor (Aquí nace el fantasma)
     let htmlFinal = prepararHTMLConRecursos(leccion.html, leccion.archivos);
 
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlFinal;
+
     // ========================================================
-    // 2. ESCÁNER AUTOMÁTICO DE PDFs (NUEVO)
+    // 2. ESCÁNER AUTOMÁTICO DE PDFs 
     // ========================================================
     let htmlPdfs = "";
     if (leccion.archivos) {
-        // Recorremos todos los archivos que venían en el ZIP de esta lección
         Object.keys(leccion.archivos).forEach(ruta => {
             if (ruta.toLowerCase().endsWith('.pdf')) {
-                // Si encontramos un PDF, sacamos su URL segura y su nombre
-                const blobUrl = window.toro_recursos[ruta];
                 const nombrePdf = ruta.split('/').pop(); 
+                let blobUrl = null;
+
+               
+                const urlDefectuosa = window.toro_recursos ? window.toro_recursos[ruta] : null;
+
+                // Creamos una nueva URL 100% limpia y forzada como PDF
+                if (leccion.archivos[ruta]) {
+                    const archivoData = leccion.archivos[ruta];
+                    
+                    if (archivoData instanceof Blob || archivoData instanceof File) {
+                        const pdfBlob = new Blob([archivoData], { type: 'application/pdf' });
+                        blobUrl = URL.createObjectURL(pdfBlob);
+                    } else if (archivoData instanceof Uint8Array || archivoData instanceof ArrayBuffer) {
+                        const pdfBlob = new Blob([archivoData], { type: 'application/pdf' });
+                        blobUrl = URL.createObjectURL(pdfBlob);
+                    } else if (typeof archivoData === 'string') {
+                        if (archivoData.substring(0, 4) === '%PDF') {
+                            const bytes = new Uint8Array(archivoData.length);
+                            for (let i = 0; i < archivoData.length; i++) {
+                                bytes[i] = archivoData.charCodeAt(i) & 0xff;
+                            }
+                            const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
+                            blobUrl = URL.createObjectURL(pdfBlob);
+                        } else {
+                            blobUrl = archivoData.startsWith('data:') ? archivoData : 'data:application/pdf;base64,' + archivoData;
+                            blobUrl = blobUrl.replace(/data:.*?;/, 'data:application/pdf;');
+                        }
+                    }
+                }
+
+                // Si por alguna razón extrema no pudimos crear la nueva, usamos la vieja
+                if (!blobUrl) blobUrl = urlDefectuosa;
+
                 
-                // Construimos el visor empotrado
-                htmlPdfs += `
-                    <div class="recurso-pdf" style="margin-top: 30px; padding: 15px; background: #f1f3f5; border-radius: 12px; border: 1px solid #e0e4e8;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                            <span style="font-size: 1.5rem;">📄</span>
-                            <strong style="color: var(--dark-green);">${nombrePdf}</strong>
+                const posiblesFantasmas = tempDiv.querySelectorAll('iframe, embed, object');
+                posiblesFantasmas.forEach(el => {
+                    const src = el.src || el.data || el.getAttribute('src') || el.getAttribute('data') || "";
+                    
+                    
+                    if (src.includes(nombrePdf) || src === blobUrl || (urlDefectuosa && src === urlDefectuosa)) {
+                        el.remove();
+                    }
+                });
+                
+               
+                if (blobUrl) {
+                    htmlPdfs += `
+                        <div class="recurso-pdf" style="margin-top: 30px; padding: 15px; background: #f1f3f5; border-radius: 12px; border: 1px solid #e0e4e8;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <span style="font-size: 1.5rem;">📄</span>
+                                <strong style="color: var(--dark-green);">${nombrePdf}</strong>
+                            </div>
+                            
+                            <iframe src="${blobUrl}" class="pdf-viewer-frame" style="width: 100%; height: 500px; border: none; border-radius: 8px; background: white;"></iframe>
+                            
+                            <div style="margin-top: 15px; text-align: right;">
+                                <a href="${blobUrl}" target="_blank" class="btn-toro" style="display: inline-block; width: auto; padding: 8px 15px; font-size: 14px; text-decoration: none;">
+                                    Abrir en pantalla completa
+                                </a>
+                            </div>
                         </div>
-                        
-                        <iframe src="${blobUrl}" class="pdf-viewer-frame" style="width: 100%; height: 500px; border: none; border-radius: 8px; background: white;"></iframe>
-                        
-                        <div style="margin-top: 15px; text-align: right;">
-                            <a href="${blobUrl}" target="_blank" class="btn-toro" style="display: inline-block; width: auto; padding: 8px 15px; font-size: 14px; text-decoration: none;">
-                                Abrir en pantalla completa
-                            </a>
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
             }
         });
     }
 
-    // 3. Juntamos el HTML del profesor con los visores de PDF al final
-    contenedor.innerHTML = htmlFinal + htmlPdfs;
+    
+    contenedor.innerHTML = tempDiv.innerHTML + htmlPdfs;
 
-    // 4. Mostramos la pantalla completa
+   
     document.getElementById('lesson-modal').style.display = 'flex';
 }
 
@@ -683,9 +760,14 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
 
         //Esta función se llama cuando el usuario decide iniciar la actividad desde la vista de la lección
 
+        // Tarjeta para la clase ManejadorConfirmarActividad 
+        //Documatado por María Fernanda
+
+
         function iniciarActividadDesdeLeccion() {
             // cierra el modal de la lección para evitar superposiciones y luego llama a abrirmodal con el tipo inicio para
-            //  mostrar el modal de confirmación antes de entrar a la actividad
+            //  mostrar el modal de confirmación antes de entrar a la actividad donde se controla el accceso a la actividad
+            // o el regreso al contenido
             document.getElementById('lesson-modal').style.display = 'none';
             abrirModal('inicio');
         }
@@ -801,94 +883,117 @@ function mostrarActividad() {
     // =========================================================
     const btnToro = document.getElementById('btn-finalizar-actividad');
     
-    // Evitamos que se acumulen clics si entra y sale de varias actividades
-    btnToro.onclick = async function () {
-        try {
-            const iframeDoc = document.getElementById('iframe-actividad').contentDocument || document.getElementById('iframe-actividad').contentWindow.document;
-            const matricula = localStorage.getItem('toro_matricula');
-            let notaFinal = 0;
+   btnToro.onclick = async function () {
+    try {
+        const iframeDoc = document.getElementById('iframe-actividad').contentDocument || document.getElementById('iframe-actividad').contentWindow.document;
+        const iframeWindow = document.getElementById('iframe-actividad').contentWindow;
+        const matricula = localStorage.getItem('toro_matricula');
+        let notaFinal = 0;
 
-            const esMinijuego = iframeDoc.querySelector('.quiz-grid') !== null;
+        // ==========================================
+        // 1. IDENTIFICACIÓN AUTOMÁTICA DE LA ACTIVIDAD
+        // ==========================================
+        // Detectamos si es sopa leyendo el título de la actividad (que definiste en el ZIP)
+        const nombreActividad = (leccionActual.titulo_actividad || leccionActual.titulo || "").toLowerCase();
+        const esSopa = nombreActividad.includes('sopa'); 
+        
+        // Es ranita si tiene la clase quiz-grid PERO NO es la sopa de letras
+        const esRanita = iframeDoc.querySelector('.quiz-grid') !== null && !esSopa;
 
-            if (esMinijuego) {
-                const iframeWindow = document.getElementById('iframe-actividad').contentWindow;
-                
-                // Contamos cuántos pares hay en total en la pantalla
-                const itemsIzquierda = iframeDoc.querySelectorAll('#izquierda .item');
-                const n = itemsIzquierda.length || leccionActual.respuestasCorrectas.length || 15;
-                
-                // Contamos cuántos aciertos lleva (para saber si ya terminó)
-                const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
+        if (esRanita) {
+            // ==========================================
+            // LÓGICA 1: SALTO DE LA RANITA
+            // ==========================================
+            const itemsIzquierda = iframeDoc.querySelectorAll('#izquierda .item');
+            const n = itemsIzquierda.length || leccionActual.respuestasCorrectas.length || 15;
+            const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
 
-                // VALIDACIÓN EXTRA: No dejar que el alumno envíe si no ha terminado
-                if (aciertosDOM < n) {
-                    alert("¡La ranita aún no llega a su destino! Completa todos los pares antes de finalizar la actividad.");
-                    return; // Bloqueamos el envío
-                }
-
-                const errores = iframeWindow.erroresRanita || 0;
-                const resta = 10 / (n * 2); // Fórmula proporcionada
-                
-                // Partimos de 10 y le restamos el castigo por cada error cometido
-                let calificacion = 10 - (errores * resta);
-                
-                if (calificacion < 0) calificacion = 0;
-                
-                notaFinal = calificacion;
-                
-                // Opcional: Imprimir en consola para que veas la magia
-                console.log(`Pares: ${n} | Errores: ${errores} | Resta por error: ${resta} | Nota Final: ${notaFinal.toFixed(2)}`);
-            } else {
-                // Modo: Cuestionario Normal y Verdadero/Falso
-                const respuestasProfe = leccionActual.respuestasCorrectas || [];
-                let aciertos = 0;
-                let respondidas = 0;
-
-                respuestasProfe.forEach((res, i) => {
-                    const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
-                    if (radio) {
-                        respondidas++;
-                        
-                        // Normalizamos a minúsculas para comparar sin importar cómo lo escribió el profe
-                        let valorHTML = radio.value.trim().toLowerCase();
-                        let respuestaTXT = res.trim().toLowerCase();
-
-                        // ===================================================
-                        // TRADUCTOR INTELIGENTE VERDADERO/FALSO
-                        // El HTML manda "v" o "f", pero el TXT dice "verdadero" o "falso"
-                        // ===================================================
-                        if (valorHTML === 'v' && respuestaTXT === 'verdadero') {
-                            aciertos++;
-                        } else if (valorHTML === 'f' && respuestaTXT === 'falso') {
-                            aciertos++;
-                        } 
-                        // ===================================================
-                        // LÓGICA CLÁSICA PARA OPCIÓN MÚLTIPLE NORMAL
-                        // ===================================================
-                        else if (valorHTML === respuestaTXT) {
-                            aciertos++;
-                        }
-                    }
-                });
-
-                // Validación de que no deje preguntas en blanco
-                if (respondidas < respuestasProfe.length) {
-                    alert(`¡Alto ahí! Te faltan preguntas por responder. Llevas ${respondidas} de ${respuestasProfe.length}.`);
-                    return; // Bloqueamos el envío
-                }
-                
-                // Calculamos la nota (regla de 3 para sacar el 10 perfecto)
-                notaFinal = (aciertos / respuestasProfe.length) * 10;
+            if (aciertosDOM < n) {
+                alert("¡La ranita aún no llega a su destino! Completa todos los pares antes de finalizar la actividad.");
+                return; 
             }
 
-            await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
-            document.getElementById('actividad-modal').style.display = 'none';
-            abrirModal('resultado', notaFinal);
+            const errores = iframeWindow.erroresRanita || 0;
+            const resta = 10 / (n * 2); 
+            let calificacion = 10 - (errores * resta);
+            if (calificacion < 0) calificacion = 0;
             
-        } catch(error) {
-            console.error("Error al procesar la calificación:", error);
+            notaFinal = calificacion;
+            console.log(`Ranita - Pares: ${n} | Errores: ${errores} | Nota Final: ${notaFinal.toFixed(2)}`);
+
+        } else if (esSopa) {
+            // ==========================================
+            // LÓGICA 2: SOPA DE LETRAS (Lectura del DOM)
+            // ==========================================
+            // TAREITA PARA TI: Tienes que abrir la sopa de letras, darle clic derecho -> Inspeccionar,
+            // y ver qué clase CSS tienen las palabras de la lista y qué clase se les pone cuando las encuentran.
+            
+            // Cambia '.clase-de-palabra' por la clase real de la lista (ej. '.word', '.palabra-lista')
+            const palabrasEnLista = iframeDoc.querySelectorAll('#word-list li'); 
+            
+            // Si por alguna razón el DOM falla, toma la longitud (en tu código base vimos que son 4)
+            const total = palabrasEnLista.length || 4; 
+
+            // Seleccionamos únicamente los <li> que ya tienen la clase de "encontrada"
+            const encontradasDOM = iframeDoc.querySelectorAll('#word-list li.found-word').length;
+
+            
+
+            // Calculamos la calificación (si tiene todas, es 10)
+            notaFinal = (encontradasDOM / total) * 10;
+            console.log(`Sopa - Encontradas: ${encontradasDOM}/${total} | Nota Final: ${notaFinal.toFixed(2)}`);
+
+            // Calculamos la calificación
+            notaFinal = (encontradasDOM / total) * 10;
+            console.log(`Sopa - Encontradas: ${encontradasDOM}/${total} | Nota Final: ${notaFinal.toFixed(2)}`);
+
+        } else {
+            // ==========================================
+            // LÓGICA 3: CUESTIONARIOS Y V/F
+            // ==========================================
+            const respuestasProfe = leccionActual.respuestasCorrectas || [];
+            let aciertos = 0;
+            let respondidas = 0;
+
+            respuestasProfe.forEach((res, i) => {
+                const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
+                if (radio) {
+                    respondidas++;
+                    let valorHTML = radio.value.trim().toLowerCase();
+                    let respuestaTXT = res.trim().toLowerCase();
+
+                    if ((valorHTML === 'v' && respuestaTXT === 'verdadero') || 
+                        (valorHTML === 'f' && respuestaTXT === 'falso')) {
+                        aciertos++;
+                    } else if (valorHTML === respuestaTXT) {
+                        aciertos++;
+                    }
+                }
+            });
+
+            if (respondidas < respuestasProfe.length) {
+                alert(`¡Alto ahí! Te faltan preguntas por responder. Llevas ${respondidas} de ${respuestasProfe.length}.`);
+                return;
+            }
+            
+            notaFinal = (aciertos / respuestasProfe.length) * 10;
+            console.log(`Cuestionario - Aciertos: ${aciertos}/${respuestasProfe.length} | Nota Final: ${notaFinal.toFixed(2)}`);
         }
-    };
+
+        // ==========================================
+        // AQUÍ SIGUE TU CÓDIGO DE MOSTRAR MODAL
+        // ==========================================
+        // mostrarModal(notaFinal); ...
+            await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
+
+            document.getElementById('actividad-modal').style.display = 'none';
+
+            abrirModal('resultado', notaFinal);
+
+    } catch (e) {
+        console.error("Error al procesar la calificación:", e);
+    }
+};
 }
         
         // ========== SISTEMA DE MODALES UNIFICADO ==========
@@ -914,17 +1019,25 @@ async function abrirModal(tipo, puntos = 0) {
     if (modalIcon) modalIcon.style.display = 'block';
     modalTextInicio.style.color = "#555"; 
 
+    // Documentación de la tarjeta de la clase InterfazComprobaciónLección
+
+        //Aquí identiifcamos que el usuario quiere iniciar la actividad para esto se muestra la interfaz de
+        // comprobación de lección donde se le pregunta al usuario si esta seguro de continuar y se le informa sobre 
+        // el número de intentos que lleva y el máximo permitido
     if (tipo === 'inicio') {
+        //Aquí mostramos el texto de advertencia 
         title.innerText = "¿Te sientes listo para poner a prueba lo aprendido?";
         scoreSec.classList.add('hidden');
         modalTextInicio.classList.remove('hidden');
         modalTextInicio.innerText = `Este es tu intento ${intentosHechos.length + 1} de ${limiteMax}. Una vez que comiences, no podrás volver a consultar el contenido.`;
-
+        //Aquí tenemos el botón volver que regresa a la pantalla de lectura 
         btnIzq.innerText = "Volver";
         btnIzq.style.display = "block";
+        //Esta es la acción que ocurre al presionar el botón volver que es cerrar el modal de comprobación y regresar a la lectura
         btnIzq.onclick = () => { modal.style.display = 'none'; };
-        
+        //Este es el botón de aceptar que inicia la actividad y lleva al usuario a la pantalla de la actividad
         btnDer.innerText = "Aceptar";
+        //Esta es la accción que ocurre al presionar el botón aceptar que es cerrar el modal y abrir el modal de la actividad
         btnDer.onclick = () => { aceptarEIrAActividad(); };
 
     } else if (tipo === 'resultado') {
@@ -978,45 +1091,54 @@ async function abrirModal(tipo, puntos = 0) {
     const todosIntentos = await obtenerIntentosDB(mat, datos.titulo);
 
     // ... (sigue tu lógica de bloqueo de intentos) ...
+    // BLOQUEO DEFINITIVO: forzamos intentosMax igual a intentos ya hechos
+leccionActual.intentosMax = todosIntentos.length;
+try {
+    const transaction = db.transaction(['lecciones'], 'readwrite');
+    transaction.objectStore('lecciones').put(leccionActual);
+} catch (e) {
+    console.error("Error al bloquear lección:", e);
+}
+
+
+
 
     let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
     cuerpo += `---------------------------------------\n`;
-    // Usamos 'datos' en lugar de 'leccionActual'
-    cuerpo += `ID_LECCION: ${datos.id_leccion || 'N/A'}\n`;
-    cuerpo += `GRUPO: ${datos.grupo || 'N/A'}\n`;
-    cuerpo += `MATERIA: ${datos.materia || 'N/A'}\n`;
-    cuerpo += `PARCIAL: ${datos.parcial || 'N/A'}\n`;
-    cuerpo += `PROGRESION: ${datos.progresion || 'N/A'}\n`;
-    cuerpo += `ACTIVIDAD: ${datos.titulo_actividad || datos.titulo}\n`;
-    cuerpo += `FECHA_VENCIMIENTO: ${datos.fecha_vencimiento || 'N/A'}\n`;
-            
-            cuerpo += `ESTUDIANTE: ${nombre}\n`;
-            cuerpo += `MATRÍCULA: ${mat}\n\n`;
-            
-            cuerpo += `DETALLE DE EVALUACIÓN:\n`;
-            todosIntentos.forEach((intento, i) => {
-                cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
-            });
+    cuerpo += `ID_LECCION: ${leccionActual.id_leccion || leccionActual.id || 'N/A'}\n`;
+    cuerpo += `GRUPO: ${leccionActual.grupo || 'N/A'}\n`;
+    cuerpo += `MATERIA: ${leccionActual.materia || 'N/A'}\n`;
+    cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
+    
+   
+    cuerpo += `PROGRESION: ${leccionActual.progresion || 'N/A'}\n`; 
+    
+   
+    cuerpo += `ACTIVIDAD: ${leccionActual.titulo_actividad || 'N/A'}\n`; 
+    cuerpo += `---------------------------------------\n`;
+    
+    
+    cuerpo += `ESTUDIANTE: ${nombre}\n`;
+    cuerpo += `MATRICULA: ${mat}\n\n`; 
+    
+    cuerpo += `DETALLE DE EVALUACIÓN:\n`;
+    todosIntentos.forEach((intento, i) => {
+        cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
+    });
 
             const promedio = (todosIntentos.reduce((a, b) => a + b.calificacion, 0) / todosIntentos.length).toFixed(2);
             cuerpo += `\nPROMEDIO FINAL: ${promedio}/10\n`;
             cuerpo += `---------------------------------------`;
-            console.log("CONTENIDO DE LECCION ACTUAL:", leccionActual);
             const cuerpoOfuscado = ofuscarReporte(cuerpo);
-            const nombreArchivo = `REP_${leccionActual.id_leccion}_${mat}.toro`;
+            const nombreArchivo = `REP_${leccionActual.id_leccion}_${mat}_${nombre}.toro`;
             descargarArchivoTxt(cuerpoOfuscado, nombreArchivo); 
             
             modal.style.display = 'none';
             
-            if (typeof renderizarLecciones === 'function') {
-                // Recargamos la memoria para que el bloqueo surta efecto visual en la pantalla
-                leccionesMemoria = await cargarLeccionesDB(mat);
-                await renderizarLecciones();
-            } else {
-                mostrarVistaEstudiante(nombre);
-            }
-        };
-    }
+            leccionesMemoria = await cargarLeccionesDB(mat);
+            await renderizarLecciones();
+                    };
+                }
 }
 
 async function obtenerLeccionPorId(id) {
@@ -1098,10 +1220,7 @@ async function procesarHTML() {
                 const p = entry.async("blob").then(async blob => {
 
                     let blobFinal = blob;
-                    if (rutaCompleta.toLowerCase().endsWith('.pdf')) {
-                        // Si es PDF, lo re-empaquetamos forzando su tipo MIME
-                        blobFinal = new Blob([blob], { type: 'application/pdf' });
-                    }
+                    
                     
                     archivosBlobs[rutaCompleta] = blobFinal; // GUARDAMOS EL ARCHIVO REAL
                     window.toro_recursos[rutaCompleta] = URL.createObjectURL(blobFinal);
@@ -1123,9 +1242,9 @@ async function procesarHTML() {
                         grupo = extraer("GRUPO");
                         materia = extraer("MATERIA");
                         parcial = extraer("PARCIAL");
-                        progresion = extraer("PROGRESION");
-                        nombre_leccion = extraer("NOMBRE_LECCION");
-                        titulo_actividad = extraer("TITULO_ACTIVIDAD");
+                        progresion = extraer("TEMA");
+                        nombre_leccion = extraer("TITULO");
+                        titulo_actividad = extraer("NOMBRE_ACTIVIDAD");
                         fecha_vencimiento = extraer("FECHA_VENCIMIENTO");
 
                         // Lógica original de intentos y respuestas
@@ -1218,13 +1337,19 @@ async function procesarHTML() {
 
         
         function ofuscarReporte(texto) {
-            // Paso 1: Una simple rotación de caracteres o "sal" para que no sea Base64 puro
-            const textoModificado = texto.split('').map(char => 
-                String.fromCharCode(char.charCodeAt(0) + 3) // Desplaza cada carácter 3 posiciones
-            ).join('');
-            
-            // Paso 2: Convertir a Base64
-            return btoa(unescape(encodeURIComponent(textoModificado)));
+    // NUEVO PASO: Calculamos la firma matemática (longitud del texto * 77)
+    const firma = (texto.length * 77).toString();
+    
+    // NUEVO PASO: Unimos el texto del reporte y la firma con el delimitador "||"
+    const textoConFirma = texto + "||" + firma;
+
+    // Paso 1: Aplicamos la rotación de caracteres (+3) a toda la cadena unida (texto + firma)
+    const textoModificado = textoConFirma.split('').map(char => 
+        String.fromCharCode(char.charCodeAt(0) + 3) 
+    ).join('');
+    
+    // Paso 2: Convertir a Base64 asegurando la compatibilidad de acentos
+    return btoa(unescape(encodeURIComponent(textoModificado)));
 }
         
         function descargarArchivoTxt(contenido, nombreArchivo) {
@@ -1270,7 +1395,22 @@ async function procesarHTML() {
     }
 }
 
-        function mostrarLogin() { 
+ /**
+ * CLASE CRC: InterfazPantallaAcceso
+ * ESTEREOTIPO: Borde
+ *
+ * RESPONSABILIDADES:
+ * 1. Desplegar la interfaz de inicio de sesión.
+ * 2. Solicitar nombre y matrícula al alumno.
+ * 3. Detectar la acción de pulsar el botón Continuar.
+ * 4. Enviar los datos capturados al ManejadorSesionAlumno.
+ * 
+ *Hecha por cris Tarjeta 1.1 
+ */
+        function mostrarLogin() {
+
+    // Construye y muestra la interfaz gráfica de acceso al usuario alumno.
+
            document.getElementById('main-content').innerHTML = `
         <div class="login-container login-centered">
             <h1 class="app-title">T.O.R.O</h1>
@@ -1280,36 +1420,79 @@ async function procesarHTML() {
             </div>
 
             <form id="loginForm">
-                <input type="text" id="matricula" placeholder="Matrícula" required class="login-input">
-                <input type="text" id="nombre" placeholder="Nombre completo" required class="login-input">
+
+                <!-- Solicita la matrícula al alumno la cual podra ingresar numeros y caracteres-->
+                <input type="text" id="matricula" placeholder="Matrícula" required class="login-input"
+                       oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
+
+                <!-- Solicita el nombre al alumno solo podra ingresar caracteres -->
+                <input type="text" id="nombre" placeholder="Nombre completo" required class="login-input"
+                       oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '')">
+
+                <!-- hace la acción Continuar -->
+                <!-- Botón que permite al alumno enviar los datos y capturados e iniciar el proceso de acceso. -->
                 <button type="submit" class="btn-toro btn-continuar-login">Continuar</button>
             </form>
         </div>
     `;
-
+     // Envía al ManejadorSesionAlumno los datos capturados
+      /**
+     * CLASE CRC: ManejadorSesionAlumno
+     * ESTEREOTIPO: Control
+     * RESPONSABILIDADES:
+     * 1. Recibir nombre y matrícula.
+     * 2. Gestionar la sesión del alumno.
+     * 3. Coordinar el acceso al sistema.
+     * Hecho por cris tarjeta 1.2
+     
+     */
                 document.getElementById('loginForm').onsubmit = async (e) => { // Agregamos async aquí
                 e.preventDefault();
-                const nom = document.getElementById('nombre').value;
+    // Recibe los datos proporcionados por el alumno.
+                const nombre = document.getElementById('nombre').value;
                 const mat = document.getElementById('matricula').value;
-                localStorage.setItem('toro_nombre', nom);
+                const nombreLimpio = nombre.replace(/\s+/g, '_');
+
+     // Guarda los datos de la sesión
+                localStorage.setItem('toro_nombre', nombre);
                 localStorage.setItem('toro_matricula', mat);
                 localStorage.setItem('toro_datos_listos', 'true');
                 
-                // EXPLICACIÓN: Antes de cargar las materias, nos aseguramos de que
-                // la base de datos esté abierta. Si no, las funciones fallarán.
+    // EXPLICACIÓN: Antes de cargar las materias, nos aseguramos de que
+    // la base de datos esté abierta. Si no, las funciones fallarán esto 
+    // garantiza que la base de datos esté disponible.
                 if (!db) {
                     await inicializarDB();
                 }
-                
+     // Coordina el acceso a la siguiente pantalla
                 cargarPantallaMaterias();
             };
         }
+/**
+ * Verifica si existe una sesión previa del alumno.
+ * Si existe, permite continuar directamente.
+ * En caso contrario, muestra la pantalla de acceso.
+ *
+ * CRC relacionada:
+ * ManejadorSesionAlumno.
+ */
         window.addEventListener('DOMContentLoaded', async () => {
+           
+    // Inicializa la base de datos al cargar la aplicación.
             await inicializarDB();
 
+
+     // Comprueba si previamente se registraron
+    // los datos de acceso del alumno.
             if (localStorage.getItem('toro_datos_listos') === 'true') {
+
+    // Existe una sesión válida, por lo que se
+    // permite el acceso directo a las materias
                 cargarPantallaMaterias();
             } else {
+
+    // No existe una sesión activa, por lo que
+    // se muestra la interfaz de inicio de sesión.
                 mostrarLogin();
             }
         });
