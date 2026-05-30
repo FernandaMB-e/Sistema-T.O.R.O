@@ -119,34 +119,60 @@
 let db; 
 
 function inicializarDB() {
+
+ // Retorna una promesa para realizar la apertura
+ // de la base de datos de forma asíncrona.
     return new Promise((resolve, reject) => {
-        // 1. Aumentamos la versión a 3 para forzar la actualización en el navegador
+
+// Abre la base de datos ToroDB.
+// cuando existe una versión anterior.
+// 1. Aumentamos la versión a 3 para forzar la actualización en el navegador
         const request = indexedDB.open("ToroDB", 3);
 
+/**
+* Se ejecuta cuando la base de datos se crea
+ * por primera vez o cuando cambia de versión.
+ */
         request.onupgradeneeded = (e) => {
             const dbInstance = e.target.result;
-            
+
+// Crea el almacén de materias si aún no existe.
             if (!dbInstance.objectStoreNames.contains("materias")) {
                 dbInstance.createObjectStore("materias", { keyPath: "id", autoIncrement: true });
             }
+ // Crea el almacén de lecciones.
             if (!dbInstance.objectStoreNames.contains("lecciones")) {
                 const store = dbInstance.createObjectStore("lecciones", { keyPath: "id", autoIncrement: true });
+
+// Índice que permite buscar lecciones
+// asociadas a una matrícula.
                 store.createIndex("matricula", "matricula", { unique: false });
             }
-            
-            // --- NUEVO: CREAMOS LA TABLA HISTORIAL ---
+
+// Crea el almacén historial para guardar
+// los intentos y avances del alumno.
+// --- NUEVO: CREAMOS LA TABLA HISTORIAL ---
             if (!dbInstance.objectStoreNames.contains("historial")) {
                 const historialStore = dbInstance.createObjectStore("historial", { keyPath: "id", autoIncrement: true });
-                // Creamos el índice compuesto que pide tu función obtenerIntentosDB
+ 
+
+                
+// mediante matrícula y título de lección.
+// Creamos el índice compuesto que pide tu función obtenerIntentosDB
                 historialStore.createIndex("matricula_leccion", ["matricula", "leccionTitulo"], { unique: false });
             }
         };
 
         request.onsuccess = (e) => {
             db = e.target.result; // IMPORTANTE: Sin el 'let' o 'const' para que use la global
+// Notifica que la inicialización fue exitosa.
             resolve(db);
         };
-
+ /**
+ * Se ejecuta cuando ocurre un error durante
+ * la apertura de la base de datos.
+ */
+// Devuelve el error para su manejo.
         request.onerror = (e) => reject(e.target.error);
     });
 }
@@ -634,95 +660,50 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
         // permitiendo al usuario revisar el material antes de iniciar la actividad. Además de que las 
         // imagenes se carguen correctamente desde el Zip 
 
-function verLeccionImportada(index) {
+       function verLeccionImportada(index) {
     const leccion = leccionesMemoria[index];
     leccionActual = leccion;
 
     const contenedor = document.getElementById('lesson-viewer-content');
     
-    // 1. Inyectamos el HTML original del profesor (Aquí nace el fantasma)
+    // 1. Usamos nuestra función maestra para inyectar el HTML reparado
     let htmlFinal = prepararHTMLConRecursos(leccion.html, leccion.archivos);
 
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlFinal;
-
     // ========================================================
-    // 2. ESCÁNER AUTOMÁTICO DE PDFs 
+    // 2. ESCÁNER AUTOMÁTICO DE PDFs (NUEVO)
     // ========================================================
     let htmlPdfs = "";
     if (leccion.archivos) {
+        // Recorremos todos los archivos que venían en el ZIP de esta lección
         Object.keys(leccion.archivos).forEach(ruta => {
             if (ruta.toLowerCase().endsWith('.pdf')) {
+                // Si encontramos un PDF, sacamos su URL segura y su nombre
+                const blobUrl = window.toro_recursos[ruta];
                 const nombrePdf = ruta.split('/').pop(); 
-                let blobUrl = null;
-
-                // Guardamos la URL "defectuosa" para poder cazarla
-                const urlDefectuosa = window.toro_recursos ? window.toro_recursos[ruta] : null;
-
-                // Creamos una nueva URL 100% limpia y forzada como PDF
-                if (leccion.archivos[ruta]) {
-                    const archivoData = leccion.archivos[ruta];
-                    
-                    if (archivoData instanceof Blob || archivoData instanceof File) {
-                        const pdfBlob = new Blob([archivoData], { type: 'application/pdf' });
-                        blobUrl = URL.createObjectURL(pdfBlob);
-                    } else if (archivoData instanceof Uint8Array || archivoData instanceof ArrayBuffer) {
-                        const pdfBlob = new Blob([archivoData], { type: 'application/pdf' });
-                        blobUrl = URL.createObjectURL(pdfBlob);
-                    } else if (typeof archivoData === 'string') {
-                        if (archivoData.substring(0, 4) === '%PDF') {
-                            const bytes = new Uint8Array(archivoData.length);
-                            for (let i = 0; i < archivoData.length; i++) {
-                                bytes[i] = archivoData.charCodeAt(i) & 0xff;
-                            }
-                            const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
-                            blobUrl = URL.createObjectURL(pdfBlob);
-                        } else {
-                            blobUrl = archivoData.startsWith('data:') ? archivoData : 'data:application/pdf;base64,' + archivoData;
-                            blobUrl = blobUrl.replace(/data:.*?;/, 'data:application/pdf;');
-                        }
-                    }
-                }
-
-                // Si por alguna razón extrema no pudimos crear la nueva, usamos la vieja
-                if (!blobUrl) blobUrl = urlDefectuosa;
-
-            
-                const posiblesFantasmas = tempDiv.querySelectorAll('iframe, embed, object');
-                posiblesFantasmas.forEach(el => {
-                    const src = el.src || el.data || el.getAttribute('src') || el.getAttribute('data') || "";
-                    
-                    // ¡AHORA SÍ! Buscamos si el HTML viejo tiene la "urlDefectuosa" y la eliminamos sin piedad
-                    if (src.includes(nombrePdf) || src === blobUrl || (urlDefectuosa && src === urlDefectuosa)) {
-                        el.remove();
-                    }
-                });
                 
-                // Dibujamos nuestro visor
-                if (blobUrl) {
-                    htmlPdfs += `
-                        <div class="recurso-pdf" style="margin-top: 30px; padding: 15px; background: #f1f3f5; border-radius: 12px; border: 1px solid #e0e4e8;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                <span style="font-size: 1.5rem;">📄</span>
-                                <strong style="color: var(--dark-green);">${nombrePdf}</strong>
-                            </div>
-                            
-                            <iframe src="${blobUrl}" class="pdf-viewer-frame" style="width: 100%; height: 500px; border: none; border-radius: 8px; background: white;"></iframe>
-                            
-                            <div style="margin-top: 15px; text-align: right;">
-                                <a href="${blobUrl}" target="_blank" class="btn-toro" style="display: inline-block; width: auto; padding: 8px 15px; font-size: 14px; text-decoration: none;">
-                                    Abrir en pantalla completa
-                                </a>
-                            </div>
+                // Construimos el visor empotrado
+                htmlPdfs += `
+                    <div class="recurso-pdf" style="margin-top: 30px; padding: 15px; background: #f1f3f5; border-radius: 12px; border: 1px solid #e0e4e8;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.5rem;">📄</span>
+                            <strong style="color: var(--dark-green);">${nombrePdf}</strong>
                         </div>
-                    `;
-                }
+                        
+                        <iframe src="${blobUrl}" class="pdf-viewer-frame" style="width: 100%; height: 500px; border: none; border-radius: 8px; background: white;"></iframe>
+                        
+                        <div style="margin-top: 15px; text-align: right;">
+                            <a href="${blobUrl}" target="_blank" class="btn-toro" style="display: inline-block; width: auto; padding: 8px 15px; font-size: 14px; text-decoration: none;">
+                                Abrir en pantalla completa
+                            </a>
+                        </div>
+                    </div>
+                `;
             }
         });
     }
 
-    // 3. Juntamos el HTML limpio el visor de PDF
-    contenedor.innerHTML = tempDiv.innerHTML + htmlPdfs;
+    // 3. Juntamos el HTML del profesor con los visores de PDF al final
+    contenedor.innerHTML = htmlFinal + htmlPdfs;
 
     // 4. Mostramos la pantalla completa
     document.getElementById('lesson-modal').style.display = 'flex';
@@ -1179,7 +1160,10 @@ async function procesarHTML() {
                 const p = entry.async("blob").then(async blob => {
 
                     let blobFinal = blob;
-                    
+                    if (rutaCompleta.toLowerCase().endsWith('.pdf')) {
+                        // Si es PDF, lo re-empaquetamos forzando su tipo MIME
+                        blobFinal = new Blob([blob], { type: 'application/pdf' });
+                    }
                     
                     archivosBlobs[rutaCompleta] = blobFinal; // GUARDAMOS EL ARCHIVO REAL
                     window.toro_recursos[rutaCompleta] = URL.createObjectURL(blobFinal);
@@ -1343,8 +1327,21 @@ async function procesarHTML() {
         location.reload();
     }
 }
-
+ /**
+ * CLASE CRC: InterfazPantallaAcceso
+ * ESTEREOTIPO: Borde
+ *
+ * RESPONSABILIDADES:
+ * 1. Desplegar la interfaz de inicio de sesión.
+ * 2. Solicitar nombre y matrícula al alumno.
+ * 3. Detectar la acción de pulsar el botón Continuar.
+ * 4. Enviar los datos capturados al ManejadorSesionAlumno.
+ * 
+ *Hecha por cris Tarjeta 1.1 
+ */
         function mostrarLogin() {
+
+    // Construye y muestra la interfaz gráfica de acceso al usuario alumno.
            document.getElementById('main-content').innerHTML = `
         <div class="login-container login-centered">
             <h1 class="app-title">T.O.R.O</h1>
@@ -1354,39 +1351,79 @@ async function procesarHTML() {
             </div>
 
             <form id="loginForm">
+
+                <!-- Solicita la matrícula al alumno la cual podra ingresar numeros y caracteres-->
                 <input type="text" id="matricula" placeholder="Matrícula" required class="login-input"
                        oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
+
+                <!-- Solicita el nombre al alumno solo podra ingresar caracteres -->
                 <input type="text" id="nombre" placeholder="Nombre completo" required class="login-input"
                        oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '')">
+
+                <!-- hace la acción Continuar -->
+                <!-- Botón que permite al alumno enviar los datos y capturados e iniciar el proceso de acceso. -->
                 <button type="submit" class="btn-toro btn-continuar-login">Continuar</button>
             </form>
         </div>
     `;
-
+     // Envía al ManejadorSesionAlumno los datos capturados
+      /**
+     * CLASE CRC: ManejadorSesionAlumno
+     * ESTEREOTIPO: Control
+     * RESPONSABILIDADES:
+     * 1. Recibir nombre y matrícula.
+     * 2. Gestionar la sesión del alumno.
+     * 3. Coordinar el acceso al sistema.
+     * Hecho por cris tarjeta 1.2
+     
+     */
                 document.getElementById('loginForm').onsubmit = async (e) => { // Agregamos async aquí
                 e.preventDefault();
+    // Recibe los datos proporcionados por el alumno.
                 const nombre = document.getElementById('nombre').value;
                 const mat = document.getElementById('matricula').value;
                 const nombreLimpio = nombre.replace(/\s+/g, '_');
+
+     // Guarda los datos de la sesión
                 localStorage.setItem('toro_nombre', nombre);
                 localStorage.setItem('toro_matricula', mat);
                 localStorage.setItem('toro_datos_listos', 'true');
                 
-                // EXPLICACIÓN: Antes de cargar las materias, nos aseguramos de que
-                // la base de datos esté abierta. Si no, las funciones fallarán.
+    // EXPLICACIÓN: Antes de cargar las materias, nos aseguramos de que
+    // la base de datos esté abierta. Si no, las funciones fallarán esto 
+    // garantiza que la base de datos esté disponible.
                 if (!db) {
                     await inicializarDB();
                 }
-                
+     // Coordina el acceso a la siguiente pantalla
                 cargarPantallaMaterias();
             };
         }
+/**
+ * Verifica si existe una sesión previa del alumno.
+ * Si existe, permite continuar directamente.
+ * En caso contrario, muestra la pantalla de acceso.
+ *
+ * CRC relacionada:
+ * ManejadorSesionAlumno.
+ */
         window.addEventListener('DOMContentLoaded', async () => {
+           
+    // Inicializa la base de datos al cargar la aplicación.
             await inicializarDB();
 
+
+     // Comprueba si previamente se registraron
+    // los datos de acceso del alumno.
             if (localStorage.getItem('toro_datos_listos') === 'true') {
+
+    // Existe una sesión válida, por lo que se
+    // permite el acceso directo a las materias
                 cargarPantallaMaterias();
             } else {
+
+    // No existe una sesión activa, por lo que
+    // se muestra la interfaz de inicio de sesión.
                 mostrarLogin();
             }
         });
