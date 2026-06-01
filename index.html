@@ -77,6 +77,10 @@
 <div id="lesson-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div id="lesson-viewer-content"></div>
+        <!--Tarjeta 8.1: InterfazPantallaLecciones (Delegación de Control)
+        Evento disparado por el alumno tras visualizar los recursos informativos. 
+        Cumple con la responsabilidad de capturar la elección del usuario, cerrar la 
+        vista de materiales y delegar la inyección del entorno evaluativo al ManejadorActividad-->
         <button class="btn-toro" onclick="iniciarActividadDesdeLeccion()">Realizar Actividad</button>
         <button class="btn-toro btn-gray" onclick="document.getElementById('lesson-modal').style.display='none'">Cerrar</button>
     </div>
@@ -182,6 +186,11 @@ function inicializarDB() {
         // sino que una vez terminada se guarde como terminada y se pueda bloquear el acceso de nuevo para evitar cuestiones 
         // con las calificaciones
 
+        //Tarjeta 8.3: Entidad TipoActividad
+        //Recibe la estructura previamente extraída del paquete ZIP y persiste la 
+        //configuración fundamental de la actividad (HTML, archivos binarios vinculados, 
+        //intentos permitidos y respuestas correctas) asociándola al alumno en IndexedDB.
+
         function guardarLeccionDB(matricula, leccion) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['lecciones'], 'readwrite');
@@ -202,14 +211,10 @@ function inicializarDB() {
             titulo_actividad: leccion.titulo_actividad,
             fecha_vencimiento: leccion.fecha_vencimiento,
 
-            // Lo que ya tenías
             titulo: leccion.titulo,
             html: leccion.html,
             respuestasCorrectas: leccion.respuestasCorrectas,
 
-            // ==================================================
-           
-            // Ahora sí le decimos a la DB que guarde los videos, PDFs y audios
             archivos: leccion.archivos, 
             // ==================================================
 
@@ -324,8 +329,10 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
         alert("Hubo un error al intentar eliminar la materia.");
     }
 }
-        // cargar lecciones de una matrícula
-        //Con esto podemos cargar las lecciones que el usuario ha importado previamnete ya que estan asociandas a su matricula
+        //Tarjeta 8.1: InterfazPantallaLecciones (Filtrado y Vista)
+        //Consulta en el repositorio local (IndexedDB) todas las lecciones del alumno 
+        //e implementa un filtro mediante el 'materia_id_actual' almacenado en sessionStorage 
+        //para renderizar y mostrar en pantalla únicamente los recursos de la materia seleccionada.
         function cargarLeccionesDB(matricula) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['lecciones'], 'readonly');
@@ -891,7 +898,12 @@ function mostrarActividad() {
         // ==========================================
         // 1. IDENTIFICACIÓN AUTOMÁTICA DE LA ACTIVIDAD
         // ==========================================
-        // Detectamos si es sopa leyendo el título de la actividad (que definiste en el ZIP)
+
+        //Tarjeta 8.3: Entidad TipoActividad (Lógica de Procesamiento)
+        //Identifica la estructura inyectada en el DOM para determinar el tipo de dinámica 
+        //(ej. Sopa de letras, Ranita, Grid clásico). Con base en este identificador de estado, 
+        //aplica las reglas específicas para recolectar y comparar las respuestas del alumno 
+        //contra las soluciones alojadas en la entidad.
         const nombreActividad = (leccionActual.titulo_actividad || leccionActual.titulo || "").toLowerCase();
         const esSopa = nombreActividad.includes('sopa'); 
         
