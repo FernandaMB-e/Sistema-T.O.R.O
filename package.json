@@ -19,5 +19,8 @@
     "express": "^5.2.1",
     "jszip": "^3.10.1",
     "multer": "^2.1.1"
+  },
+  "devDependencies": {
+    "cypress": "^15.16.0"
   }
 }
