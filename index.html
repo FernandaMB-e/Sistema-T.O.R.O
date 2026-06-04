@@ -457,7 +457,16 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
     mostrarVistaEstudiante(nombreUsuario);
 }
 
-
+/** CLASE CRC: InterfazCargarArchivo
+ * ESTEREOTIPO: Borde
+ *
+ * RESPONSABILIDADES:
+ * 1. Desplegar la interfaz de carga de archivos al alumno.
+ * 2. Solicitar al explorador de archivos que muestre los archivos disponibles.
+ * 3. Capturar el archivo ZIP seleccionado por el alumno.
+ * 4. Mostrar el nombre del archivo seleccionado en el mensajeEstado.
+ * 5. Enviar la solicitud de carga al ManejadorCargarArchivos al pulsar el botón.
+ * */
    async function mostrarVistaEstudiante(nombre) {
     const matricula = localStorage.getItem('toro_matricula');
     const nombreMateria = sessionStorage.getItem('materia_nombre_actual') || 'Materia Seleccionada';
@@ -1206,7 +1215,19 @@ async function obtenerLeccionPorId(id) {
         request.onerror = () => resolve(null);
     });
 }
-        
+        /**
+ * CLASE CRC: ManejadorCargarArchivo
+ * ESTEREOTIPO: Control
+ *
+ * RESPONSABILIDADES:
+ * 1. Recibir la solicitud de carga enviada por InterfazCargarArchivo.
+ * 2. Validar que el archivo no exceda el límite de tamaño permitido.
+ * 3. Verificar que la lección no haya sido importada previamente en ninguna materia.
+ * 4. Abrir y descomprimir el archivo ZIP para extraer su contenido.
+ * 5. Instanciar el objeto leccionNueva con los datos extraídos del ZIP.
+ * 6. Gestionar el guardado de la lección en la base de datos IndexedDB.
+ * 7. Actualizar la lista de lecciones visible al alumno al finalizar el proceso.
+ */
        // ========== PROCESAMIENTO ZIP ==========
 async function procesarHTML() {
     const input = document.getElementById('fileInput');
