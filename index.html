@@ -464,7 +464,16 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
     mostrarVistaEstudiante(nombreUsuario);
 }
 
-
+/** CLASE CRC: InterfazCargarArchivo
+ * ESTEREOTIPO: Borde
+ *
+ * RESPONSABILIDADES:
+ * 1. Desplegar la interfaz de carga de archivos al alumno.
+ * 2. Solicitar al explorador de archivos que muestre los archivos disponibles.
+ * 3. Capturar el archivo ZIP seleccionado por el alumno.
+ * 4. Mostrar el nombre del archivo seleccionado en el mensajeEstado.
+ * 5. Enviar la solicitud de carga al ManejadorCargarArchivos al pulsar el botón.
+ * */
    async function mostrarVistaEstudiante(nombre) {
     const matricula = localStorage.getItem('toro_matricula');
     const nombreMateria = sessionStorage.getItem('materia_nombre_actual') || 'Materia Seleccionada';
@@ -496,7 +505,6 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
             <div id="contenedor-lecciones" class="lesson-container"></div>
 
             <hr class="section-divider">
-
             <h2 class="section-title">Importar nuevas lecciones</h2>
             <div class="upload-area">
                 <span class="upload-icon">📂</span>
@@ -812,6 +820,8 @@ function mostrarActividad() {
     iframe.style.minHeight = '700px'; // Le damos altura suficiente
     iframe.style.border = 'none';
     iframe.style.overflow = 'hidden';
+    iframe.style.height = 'auto';
+
     
     // Inyectamos un escudo protector dentro del HTML del profe antes de meterlo al iframe
     // Esto obliga al juego a mantener su ancho original y solo "aleja la cámara" para que quepa.
@@ -826,6 +836,60 @@ function mostrarActividad() {
             @media (min-width: 500px) { .container { zoom: 0.55; } }
             @media (min-width: 800px) { .container { zoom: 0.8; } }
             @media (min-width: 1100px) { .container { zoom: 1; } }
+            html, body { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            background: transparent !important;
+            width: 100% !important;
+            overflow-x: hidden !important;
+            height: auto !important;
+        }
+
+        .container { 
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: unset !important;
+            margin: 0 auto !important;
+            padding: 8px !important;
+            zoom: unset !important;
+        }
+
+        #game-board, .quiz-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 6px !important;
+            width: 100% !important;
+        }
+
+        #izquierda, #derecha {
+            width: 48% !important;
+            min-width: unset !important;
+            max-width: 48% !important;
+        }
+
+        #izquierda .item, #derecha .item {
+            padding: 6px 8px !important;
+            font-size: 13px !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            line-height: 1.3 !important;
+        }
+
+        img { max-width: 100% !important; height: auto !important; }
+        
+        h1, h2, h3, p { 
+            word-wrap: break-word !important; 
+            overflow-wrap: break-word !important; 
+        }
+
+        input[type="radio"] { 
+            width: 18px !important; 
+            height: 18px !important; 
+            margin-right: 8px !important; 
+        }
+
+        label { line-height: 1.5 !important; }
+
         </style>
     `;
     
@@ -878,7 +942,9 @@ function mostrarActividad() {
                 // Le decimos al espía que vigile el panel izquierdo
                 observer.observe(panelIzq, { attributes: true, subtree: true, attributeFilter: ['class'] });
             }
-        } catch(e) {
+        } 
+        
+        catch(e) {
             console.log("Aislamiento y espía configurados con éxito.");
         }
     };
@@ -1160,7 +1226,19 @@ async function obtenerLeccionPorId(id) {
         request.onerror = () => resolve(null);
     });
 }
-        
+        /**
+ * CLASE CRC: ManejadorCargarArchivo
+ * ESTEREOTIPO: Control
+ *
+ * RESPONSABILIDADES:
+ * 1. Recibir la solicitud de carga enviada por InterfazCargarArchivo.
+ * 2. Validar que el archivo no exceda el límite de tamaño permitido.
+ * 3. Verificar que la lección no haya sido importada previamente en ninguna materia.
+ * 4. Abrir y descomprimir el archivo ZIP para extraer su contenido.
+ * 5. Instanciar el objeto leccionNueva con los datos extraídos del ZIP.
+ * 6. Gestionar el guardado de la lección en la base de datos IndexedDB.
+ * 7. Actualizar la lista de lecciones visible al alumno al finalizar el proceso.
+ */
        // ========== PROCESAMIENTO ZIP ==========
 async function procesarHTML() {
     const input = document.getElementById('fileInput');
@@ -1308,7 +1386,7 @@ async function procesarHTML() {
         leccionesMemoria = await cargarLeccionesDB(matricula);
         renderizarLecciones();
 
-        alert(` Importado: ${leccionNueva.titulo}`);
+        alert(` Importado con éxito: "${tituloNuevo}"\n\nPuedes encontrarlo ahora en tu lista de lecciones para esta materia. ¡Buena suerte!`);
 
         // Limpiar input del selector
         input.value = '';
