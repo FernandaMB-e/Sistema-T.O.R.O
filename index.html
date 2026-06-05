@@ -498,7 +498,6 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
             <div id="contenedor-lecciones" class="lesson-container"></div>
 
             <hr class="section-divider">
-
             <h2 class="section-title">Importar nuevas lecciones</h2>
             <div class="upload-area">
                 <span class="upload-icon">📂</span>
@@ -1375,7 +1374,7 @@ async function procesarHTML() {
         leccionesMemoria = await cargarLeccionesDB(matricula);
         renderizarLecciones();
 
-        alert(` Importado: ${leccionNueva.titulo}`);
+        alert(` Importado con éxito: "${tituloNuevo}"\n\nPuedes encontrarlo ahora en tu lista de lecciones para esta materia. ¡Buena suerte!`);
 
         // Limpiar input del selector
         input.value = '';
