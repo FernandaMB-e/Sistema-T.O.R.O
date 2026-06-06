@@ -505,12 +505,19 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
                 <button class="btn-toro btn-upload" onclick="document.getElementById('fileInput').click()">Seleccionar ZIP</button>
                 <div id="file-status" class="file-status">Ningún archivo seleccionado</div>
             </div>
-
+           
             <div class="upload-actions">
                 <p class="info-text">Pulsa para cargar las lecciones</p>
                 <button class="btn-toro btn-green action-button" onclick="procesarHTML()">Cargar archivos</button>
             </div>
-
+             <div class="upload-actions" style="margin-top: 15px; background: #e8f5e9; padding: 15px; border-radius: 8px; border: 1px solid #c8e6c9;">
+                <p class="info-text" style="color: #2e7d32; font-weight: bold; margin-top:0; margin-bottom: 8px;">
+                    📡 Portal de Archivos
+                </p>
+                <button class="btn-toro action-button" style="background-color: #0288d1; width: 100%;" onclick="irAlCentroSincronizacion()">
+                    Carga y descarga de lecciones
+                </button>
+            </div>
         </div>
     `;
     renderizarLecciones();
@@ -1560,6 +1567,16 @@ async function procesarHTML() {
                 mostrarLogin();
             }
         });
+     function irAlCentroSincronizacion() {
+    // window.location.origin obtiene de forma dinámica: "http://" + LAN_IP + ":" + PORT
+    // y le concatenamos la ruta exacta que definiste en Express: /sync-alumno.html
+    const urlSincronizacion = window.location.origin + "/sync-alumno.html";
+    
+    // Redirecciona al alumno de inmediato
+    window.location.href = urlSincronizacion;
+    
+    }
+    
     </script>
 
 
