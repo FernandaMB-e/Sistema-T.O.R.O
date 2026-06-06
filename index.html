@@ -462,7 +462,17 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
     // Ahora sí mostramos la vista que ya tenías
     const nombreUsuario = localStorage.getItem('toro_nombre');
     mostrarVistaEstudiante(nombreUsuario);
-}
+}/** CLASE CRC: InterfazCargarArchivo
+ * ESTEREOTIPO: Borde
+ *
+ * RESPONSABILIDADES:
+ * 1. Desplegar la interfaz de carga de archivos al alumno.
+ * 2. Solicitar al explorador de archivos que muestre los archivos disponibles.
+ * 3. Capturar el archivo ZIP seleccionado por el alumno.
+ * 4. Mostrar el nombre del archivo seleccionado en el mensajeEstado.
+ * 5. Enviar la solicitud de carga al ManejadorCargarArchivos al pulsar el botón.
+ * */
+
 
 
    async function mostrarVistaEstudiante(nombre) {
@@ -508,6 +518,14 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
             <div class="upload-actions">
                 <p class="info-text">Pulsa para cargar las lecciones</p>
                 <button class="btn-toro btn-green action-button" onclick="procesarHTML()">Cargar archivos</button>
+            </div>
+            <div class="upload-actions" style="margin-top: 15px; background: #e8f5e9; padding: 15px; border-radius: 8px; border: 1px solid #c8e6c9;">
+                <p class="info-text" style="color: #2e7d32; font-weight: bold; margin-top:0; margin-bottom: 8px;">
+                    📡 Portal de Archivos
+                </p>
+                <button class="btn-toro action-button" style="background-color: #0288d1; width: 100%;" onclick="irAlCentroSincronizacion()">
+                    Carga y descarga de lecciones
+                </button>
             </div>
 
         </div>
@@ -1308,7 +1326,7 @@ async function procesarHTML() {
         leccionesMemoria = await cargarLeccionesDB(matricula);
         renderizarLecciones();
 
-        alert(` Importado: ${leccionNueva.titulo}`);
+          alert(` Importado con éxito: "${tituloNuevo}"\n\nPuedes encontrarlo ahora en tu lista de lecciones para esta materia. ¡Buena suerte!`);
 
         // Limpiar input del selector
         input.value = '';
@@ -1494,9 +1512,18 @@ async function procesarHTML() {
                 mostrarLogin();
             }
         });
-    </script>
+    
 
-
+     function irAlCentroSincronizacion() {
+    // window.location.origin obtiene de forma dinámica: 
+    "http://" + LAN_IP + ":" + PORT
+    // y le concatenamos la ruta exacta que definiste en Express: /sync-alumno.html
+    const urlSincronizacion = window.location.origin + "/sync-alumno.html";
+    
+    // Redirecciona al alumno de inmediato
+    window.location.href = urlSincronizacion;
+     }
+     </script>
 </body>
 
 </html>
