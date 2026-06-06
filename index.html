@@ -1202,13 +1202,9 @@ async function procesarHTML() {
         }
         // ----------------------------------------------------------
         //  NUEVO: Buscamos el título en TODAS las materias del alumno, no solo la actual 
-        // Si la función encuentra una coincidencia, devuelve el objeto lección con su materia_id.
-        // Si no encuentra nada, devuelve null y el alumno puede continuar.
         const leccionDuplicada = await buscarLeccionGlobalDB(matricula, tituloNuevo);
  
         if (leccionDuplicada) {
-            //  NUEVO: Buscamos el nombre de la materia donde ya existe para el mensaje 
-            // Abrimos una transacción de solo lectura sobre "materias" y buscamos por el ID guardado.
             const transaction = db.transaction(['materias'], 'readonly');
             const store = transaction.objectStore('materias');
             const reqMateria = store.get(leccionDuplicada.materia_id);
@@ -1226,7 +1222,8 @@ async function procesarHTML() {
             document.getElementById('file-status').style.color = '#888';
             return;
         }
-            // ----------------------------------------------------------
+        // ----------------------------------------------------------
+        
         const arrayBuffer = await file.arrayBuffer();
         const zip = await JSZip.loadAsync(arrayBuffer);
 
@@ -1240,7 +1237,7 @@ async function procesarHTML() {
             progresion = "", nombre_leccion = "", titulo_actividad = "", fecha_vencimiento = "";
 
         // ---- NUEVO: Creamos un almacén para los archivos físicos ----
-       let archivosBlobs = {}; 
+        let archivosBlobs = {}; 
         const promesas = [];
 
         zip.forEach((rutaCompleta, entry) => {
@@ -1249,16 +1246,42 @@ async function procesarHTML() {
 
                     let blobFinal = blob;
                     
-                    
                     archivosBlobs[rutaCompleta] = blobFinal; // GUARDAMOS EL ARCHIVO REAL
                     window.toro_recursos[rutaCompleta] = URL.createObjectURL(blobFinal);
                     
                     // Aseguramos que lea el txt sin importar si está en mayúsculas (.TXT)
                     if (rutaCompleta.toLowerCase().endsWith('.txt')) {
-                        // Usamos blobFinal por buena práctica
-                        const texto = await blobFinal.text(); 
+                        // 1. Obtenemos el texto crudo del archivo
+                        const textoCrudo = await blobFinal.text(); 
+                        let texto = "";
+
+                        // ========================================================
+                        // NUEVO: PROCESO DE DESOFUSCACIÓN
+                        // ========================================================
+                        try {
+                            const base64Limpio = textoCrudo.replace(/\s+/g, '');
+                            const textoCifrado = atob(base64Limpio);
+                            let textoOriginal = '';
+                            
+                            // Revertimos el cifrado César (-3)
+                            for (let i = 0; i < textoCifrado.length; i++) {
+                                textoOriginal += String.fromCharCode(textoCifrado.charCodeAt(i) - 3);
+                            }
+                            
+                            // Si el archivo trae la firma (||77), separamos la información
+                            if (textoOriginal.includes('||')) {
+                                texto = textoOriginal.split('||')[0]; // Tomamos solo el contenido válido
+                            } else {
+                                texto = textoOriginal;
+                            }
+                        } catch (error) {
+                            // Escudo: Si el archivo no venía ofuscado, lo procesamos de forma normal
+                            console.warn("El archivo TXT no estaba ofuscado. Leyendo en texto plano.");
+                            texto = textoCrudo;
+                        }
+                        // ========================================================
                         
-                        // Función interna para extraer valores del TXT
+                        // Función interna para extraer valores del TXT ya desofuscado
                         const extraer = (campo) => {
                             const regex = new RegExp(`${campo}:\\s*(.*)`, "i");
                             const match = texto.match(regex);
@@ -1275,7 +1298,6 @@ async function procesarHTML() {
                         titulo_actividad = extraer("NOMBRE_ACTIVIDAD");
                         fecha_vencimiento = extraer("FECHA_VENCIMIENTO");
 
-                        // Lógica original de intentos y respuestas
                         // Lógica original de intentos y respuestas compatible con Verdadero/Falso
                         const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
                         if (mInt) intentosTxt = parseInt(mInt[1]);
@@ -1295,10 +1317,8 @@ async function procesarHTML() {
         await Promise.all(promesas);
         htmlOriginal = await zip.file(rutaHtml).async("string");
         
-
-        // Construcción del objeto leccionNueva con los parámetros técnicos y los del cl                        iente
+        // Construcción del objeto leccionNueva con los parámetros técnicos y los del cliente
         const leccionNueva = {
-            // Campos originales preservados
             titulo: tituloNuevo,
             html: htmlOriginal,
             rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1),
@@ -1319,14 +1339,14 @@ async function procesarHTML() {
             fecha_vencimiento: fecha_vencimiento
         };
 
-        // Guardar en IndexedDB usando tu función original (que ya sabe manejar estos campos)
+        // Guardar en IndexedDB usando tu función original
         await guardarLeccionDB(matricula, leccionNueva);
 
         // Recargar lecciones una vez mas
         leccionesMemoria = await cargarLeccionesDB(matricula);
         renderizarLecciones();
 
-          alert(` Importado con éxito: "${tituloNuevo}"\n\nPuedes encontrarlo ahora en tu lista de lecciones para esta materia. ¡Buena suerte!`);
+        alert(` Importado: ${leccionNueva.titulo}`);
 
         // Limpiar input del selector
         input.value = '';
@@ -1345,7 +1365,6 @@ async function procesarHTML() {
         if (e.message === "ALMACENAMIENTO_LLENO"|| e.name === "QuotaExceededError") {
             alert("¡Tu celular no tiene espacio suficiente!\n\nNo pudimos guardar la lección. Por favor, libera espacio y vuelve a intentarlo.");
         } else {
-            // Error genérico para archivos corruptos o truncados (ECONNRESET)
             alert("Ocurrió un error al intentar abrir el archivo ZIP.\n\nEs posible que la descarga se haya interrumpido o el archivo esté dañado. Vuelve a descargarlo del profesor.");
         }
     }
