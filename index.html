@@ -1534,14 +1534,9 @@ async function procesarHTML() {
     
 
      function irAlCentroSincronizacion() {
-    // window.location.origin obtiene de forma dinámica: 
-    "http://" + LAN_IP + ":" + PORT
-    // y le concatenamos la ruta exacta que definiste en Express: /sync-alumno.html
     const urlSincronizacion = window.location.origin + "/sync-alumno.html";
-    
-    // Redirecciona al alumno de inmediato
-    window.location.href = urlSincronizacion;
-     }
+            window.location.href = urlSincronizacion;
+        }
      </script>
 </body>
 
