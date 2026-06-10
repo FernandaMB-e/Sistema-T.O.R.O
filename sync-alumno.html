@@ -17,6 +17,14 @@
     </style>
 </head>
 <body>
+     <div class="mobile-container">
+    <div class="nav-top" style="display: flex; justify-content: flex-start; width: 100%; padding: 10px 0;">
+        <button class="btn-regresar-flecha" onclick="regresarALecciones()" style="background: none; border: none; padding: 0; cursor: pointer; font-size: 24px; color: inherit;">
+            &#10094;
+        </button>
+    </div>
+
+    </div>
     <div class="container">
         <h1>Zona de Sincronización Local</h1>
         
@@ -36,6 +44,8 @@
                 <button type="submit" class="btn" style="background:#5d4037">Subir al Servidor del Profesor</button>
             </form>
         </div>
+       
+
     </div>
 
     <script>
@@ -113,6 +123,13 @@
                 } else { alert(data.error); }
             } catch (err) { alert('Error crítico al intentar transmitir el archivo.'); }
         };
+        function regresarALecciones() {
+    // Le indicamos al sistema que al volver debe abrir la materia directamente
+    sessionStorage.setItem('redirigir_a_materia', 'true');
+    
+    // Redirecciona al index
+    window.location.href = "index.html"; 
+}
     </script>
 </body>
 </html>
