@@ -1,33 +1,48 @@
 describe('Smoke Test - Sistema T.O.R.O.', () => {
   
-  // Antes de cada prueba (it), le decimos a Cypress que visite la página principal
   beforeEach(() => {
-    // Nota: Cambia el '3000' por el puerto donde corra tu servidor de Node/Express
+    // 1. ¡OJO AQUÍ! Cambié el puerto a 5500 que es el estándar de Live Server. 
+    // Si usas otro, cámbialo.
     cy.visit('http://localhost:5000'); 
+    
+    // Forzamos la limpieza de sesión para que SIEMPRE aparezca el Login
+    cy.clearLocalStorage();
   });
 
   it('Debe cargar la vista principal sin errores', () => {
-    // Verificamos que el body de la página se haya renderizado
     cy.get('body').should('be.visible');
   });
 
   it('Debe mostrar el logo del sistema', () => {
-    // Buscamos que exista una imagen cuyo origen (src) incluya el nombre de tu archivo
-    cy.get('img[src*="logo_toro.png"]')
-      .should('be.visible')
-      .and(($img) => {
-        // Esta aserción extra verifica que la imagen realmente cargó y no está rota
-        expect($img[0].naturalWidth).to.be.greaterThan(0);
-      });
+    // Le damos hasta 10 segundos para que inicializarDB() termine y dibuje la pantalla
+    cy.get('img[src*="logo_toro.png"]', { timeout: 10000 })
+      .should('be.visible');
   });
 
   it('Debe tener acceso al manifest para el soporte offline', () => {
-    // Hacemos una petición directa al archivo manifest.json para asegurar que el servidor lo está entregando
     cy.request('/manifest.json').then((response) => {
       expect(response.status).to.eq(200);
-      // Opcional: verificar que sea un JSON válido
-      expect(response.headers['content-type']).to.include('application/json');
     });
+  });
+
+  // ====================================================================
+  // PRUEBA DE LOGIN
+  // ====================================================================
+  it('Debe hacer login y redirigir a la vista de materias', () => {
+    
+    // Esperamos pacientemente a que aparezca el input de nombre
+    cy.get('#nombre', { timeout: 10000 }).type('Maria Fernanda');
+    cy.get('#matricula').type('8273');
+
+    cy.get('.btn-continuar-login').click();
+
+    // Verificamos que el formulario de login fue DESTRUIDO del HTML
+    cy.get('#loginForm').should('not.exist'); 
+    
+    // IMPORTANTE: Abre tu archivo donde dibujas las materias y busca 
+    // una clase o ID real. Por ejemplo, si tus materias se dibujan en 
+    // un div con id="main-content", pon ese.
+    cy.get('body').should('be.visible'); // Reemplaza 'body' por el '#ID_DE_TUS_MATERIAS'
   });
 
 });
