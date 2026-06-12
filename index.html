@@ -100,6 +100,8 @@
 
 
     <script>
+
+
         //============== SERVIDOR SW =====================
       if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -333,6 +335,23 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
         //Consulta en el repositorio local (IndexedDB) todas las lecciones del alumno 
         //e implementa un filtro mediante el 'materia_id_actual' almacenado en sessionStorage 
         //para renderizar y mostrar en pantalla únicamente los recursos de la materia seleccionada.
+
+/*CLASE CRC: ManejadorContenidoLección
+Tipo: Control
+
+Descripción:
+Coordina el acceso a las lecciones almacenadas
+en la base de datos y las prepara para ser
+mostradas al alumno.
+
+Responsabilidades:
+- Consultar contenido de lecciones.
+- Recuperar información desde IndexedDB.
+- Instanciar objetos Lección.
+- Gestionar el acceso al contenido.
+
+Hecha por Emanuel Ruiz Bielma
+*/
         function cargarLeccionesDB(matricula) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['lecciones'], 'readonly');
@@ -685,7 +704,13 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
         // permitiendo al usuario revisar el material antes de iniciar la actividad. Además de que las 
         // imagenes se carguen correctamente desde el Zip 
 
-       function verLeccionImportada(index) {
+/*
+Responsabilidad CRC:
+Desplegar la interfaz con el contenido de la lección
+para que el alumno pueda visualizarla.
+*/
+
+    function verLeccionImportada(index) {
     const leccion = leccionesMemoria[index];
     leccionActual = leccion;
 
@@ -786,7 +811,11 @@ function prepararHTMLConRecursos(htmlOriginal, archivos) {
         // Tarjeta para la clase ManejadorConfirmarActividad 
         //Documatado por María Fernanda
 
-
+/*
+Responsabilidad CRC:
+Redireccionar al alumno desde la lección hacia
+la actividad correspondiente.
+*/
         function iniciarActividadDesdeLeccion() {
             // cierra el modal de la lección para evitar superposiciones y luego llama a abrirmodal con el tipo inicio para
             //  mostrar el modal de confirmación antes de entrar a la actividad donde se controla el accceso a la actividad
@@ -1317,6 +1346,24 @@ async function procesarHTML() {
         await Promise.all(promesas);
         htmlOriginal = await zip.file(rutaHtml).async("string");
         
+
+/*
+ CLASE CRC: Lección
+Tipo: Entidad
+
+Descripción:
+Representa una lección educativa dentro del sistema.
+Almacena el contenido, recursos multimedia, actividad
+asociada y datos académicos de la lección.
+
+Responsabilidades:
+- Guardar la información de la lección.
+- Mantener recursos multimedia.
+- Asociar actividades evaluables.
+- Almacenar datos académicos.
+
+Hecha por Emanuel Ruiz Bielma Tabla 6.3
+*/
         // Construcción del objeto leccionNueva con los parámetros técnicos y los del cliente
         const leccionNueva = {
             titulo: tituloNuevo,
