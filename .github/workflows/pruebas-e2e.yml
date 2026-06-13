@@ -6,21 +6,19 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
+
 jobs:
   cypress-run:
-    # Máquina virtual en la nube de GitHub
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Descargar todo el código fuente del proyecto
       - name: Clonar el repositorio
         uses: actions/checkout@v4
 
-      # Paso 2: Instalar y correr la acción oficial de Cypress
       - name: Ejecutar Pruebas E2E
         uses: cypress-io/github-action@v6
         with:
-          # Inicia el backend de Express automáticamente en la máquina virtual
           start: node server.js
-          # Cypress esperará a que Express levante el puerto antes de empezar a probar
           wait-on: 'http://localhost:5000'
