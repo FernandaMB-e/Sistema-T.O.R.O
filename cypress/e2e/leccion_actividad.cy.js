@@ -1,7 +1,7 @@
 describe('Navegación del Alumno: De la Lección a la Actividad', () => {
   
   beforeEach(() => {
-    cy.visit('http://192.168.1.10:5000'); 
+    cy.visit('http://localhost:5000'); 
     
     // 1. Llenar el formulario usando los IDs exactos de tu HTML
     // Asegúrate de poner un nombre y matrícula que SÍ existan en tu base de datos local
