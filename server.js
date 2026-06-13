@@ -7,6 +7,13 @@ const os = require('os');
 
 const app = express();
 app.use(cors());
+// Servir todos los archivos estáticos (HTML, CSS, JS, Assets) desde la raíz del proyecto
+app.use(express.static(__dirname));
+
+// Asegurar que la ruta principal cargue la vista del alumno
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const PORT = process.env.PORT || 5000;
 const baseDir = __dirname;
