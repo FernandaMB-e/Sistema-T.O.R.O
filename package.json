@@ -21,6 +21,6 @@
     "multer": "^2.1.1"
   },
   "devDependencies": {
-    "cypress": "^15.16.0"
+    "cypress": "^15.17.0"
   }
 }

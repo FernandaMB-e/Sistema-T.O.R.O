@@ -1,3 +1,6 @@
 actividades_profe/
 calificaciones_alumnos/
 *.zip
+node_modules/
+cypress/screenshots/
+cypress/videos/
