@@ -108,6 +108,22 @@
         contenedor.innerHTML = '<li style="color:#d32f2f">Error al conectar con el servidor de la escuela.</li>';
     }
 }
+
+function descargarActividad(nombre) {
+            // IMPORTANTE: Asegúrate de que esta ruta coincida con la que programaste en tu backend
+            // Aquí asumimos que tienes un endpoint tipo /api/descargar-actividad/NombreDelArchivo.zip
+            const urlDescarga = `/api/descargar-actividad/${encodeURIComponent(nombre)}`;
+
+            // Creamos un enlace invisible HTML (etiqueta <a>) para forzar la descarga
+            const enlace = document.createElement('a');
+            enlace.href = urlDescarga;
+            enlace.download = nombre; // Le dice al navegador que lo guarde con ese nombre
+            
+            // Lo agregamos al documento, hacemos clic en él, y lo borramos
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+        }
         // Envío seguro del archivo ofuscado
         document.getElementById('formCalificacion').onsubmit = async (e) => {
             e.preventDefault();
