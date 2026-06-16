@@ -4,3 +4,4 @@ calificaciones_alumnos/
 node_modules/
 cypress/screenshots/
 cypress/videos/
+git rm -r --cached node_modules
