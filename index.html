@@ -125,60 +125,27 @@
 let db; 
 
 function inicializarDB() {
-
- // Retorna una promesa para realizar la apertura
- // de la base de datos de forma asíncrona.
     return new Promise((resolve, reject) => {
-
-// Abre la base de datos ToroDB.
-// cuando existe una versión anterior.
-// 1. Aumentamos la versión a 3 para forzar la actualización en el navegador
         const request = indexedDB.open("ToroDB", 3);
-
-/**
-* Se ejecuta cuando la base de datos se crea
- * por primera vez o cuando cambia de versión.
- */
         request.onupgradeneeded = (e) => {
             const dbInstance = e.target.result;
-
-// Crea el almacén de materias si aún no existe.
             if (!dbInstance.objectStoreNames.contains("materias")) {
                 dbInstance.createObjectStore("materias", { keyPath: "id", autoIncrement: true });
             }
- // Crea el almacén de lecciones.
             if (!dbInstance.objectStoreNames.contains("lecciones")) {
                 const store = dbInstance.createObjectStore("lecciones", { keyPath: "id", autoIncrement: true });
-
-// Índice que permite buscar lecciones
-// asociadas a una matrícula.
                 store.createIndex("matricula", "matricula", { unique: false });
             }
-
-// Crea el almacén historial para guardar
-// los intentos y avances del alumno.
-// --- NUEVO: CREAMOS LA TABLA HISTORIAL ---
             if (!dbInstance.objectStoreNames.contains("historial")) {
                 const historialStore = dbInstance.createObjectStore("historial", { keyPath: "id", autoIncrement: true });
- 
-
-                
-// mediante matrícula y título de lección.
-// Creamos el índice compuesto que pide tu función obtenerIntentosDB
                 historialStore.createIndex("matricula_leccion", ["matricula", "leccionTitulo"], { unique: false });
             }
         };
 
         request.onsuccess = (e) => {
-            db = e.target.result; // IMPORTANTE: Sin el 'let' o 'const' para que use la global
-// Notifica que la inicialización fue exitosa.
+            db = e.target.result; 
             resolve(db);
         };
- /**
- * Se ejecuta cuando ocurre un error durante
- * la apertura de la base de datos.
- */
-// Devuelve el error para su manejo.
         request.onerror = (e) => reject(e.target.error);
     });
 }
@@ -216,6 +183,8 @@ function inicializarDB() {
             titulo: leccion.titulo,
             html: leccion.html,
             respuestasCorrectas: leccion.respuestasCorrectas,
+            tipoPlantilla: leccion.tipoPlantilla,
+            intentosMax: leccion.intentosMax,
 
             archivos: leccion.archivos, 
             // ==================================================
@@ -251,11 +220,11 @@ function inicializarDB() {
         nombre: nombre,
         grupo: grupo,
         ciclo: ciclo,
-        color: "#82bda1" // Color por defecto
+        color: "#82bda1" 
     };
 
     try {
-        // SEGURIDAD: Si db no existe, esperamos a que se abra
+        
         if (!db) await inicializarDB();
 
         const transaction = db.transaction(['materias'], 'readwrite');
@@ -264,16 +233,16 @@ function inicializarDB() {
 
         request.onsuccess = () => {
             cerrarModalMateria();
-            cargarPantallaMaterias(); // Refrescamos la lista
+            cargarPantallaMaterias(); 
         };
     } catch (error) {
         console.error("Error al guardar:", error);
     }
 }
-// Esta función extrae las materias guardadas en tu base de datos
+
 function obtenerMateriasDB() {
     return new Promise((resolve, reject) => {
-        if (!db) { // Si por algo no está abierta, intentamos abrirla
+        if (!db) {
             inicializarDB().then(() => ejecutarConsulta());
         } else {
             ejecutarConsulta();
@@ -290,7 +259,7 @@ function obtenerMateriasDB() {
 }
 
 async function eliminarMateria(event, idMateria, nombreMateria) {
-    // Evita que se abra la materia al hacer clic en el ícono
+    
     event.stopPropagation();
 
     const confirmar = confirm(`¿Estás seguro de eliminar "${nombreMateria}"?\nSe borrarán permanentemente todas las lecciones asociadas.`);
@@ -299,17 +268,10 @@ async function eliminarMateria(event, idMateria, nombreMateria) {
 
     try {
         if (!db) await inicializarDB();
-
-        // Iniciamos una transacción para ambas tablas
         const transaction = db.transaction(['materias', 'lecciones'], 'readwrite');
         const storeMaterias = transaction.objectStore('materias');
         const storeLecciones = transaction.objectStore('lecciones');
-
-        // 1. Borrar la materia
         storeMaterias.delete(idMateria);
-
-        // 2. Borrar las lecciones asociadas
-        // Usamos un cursor para encontrar las que coincidan con el ID de la materia
         const cursorRequest = storeLecciones.openCursor();
         cursorRequest.onsuccess = (e) => {
             const cursor = e.target.result;
@@ -360,10 +322,7 @@ Hecha por Emanuel Ruiz Bielma
         const request = index.getAll(matricula);
 
         request.onsuccess = () => {
-            // Obtenemos el ID de la materia que el alumno seleccionó previamente
             const materiaIdActual = parseInt(sessionStorage.getItem('materia_id_actual'));
-            
-            // Filtramos los resultados para que solo devuelva las de esta materia
             const leccionesFiltradas = request.result.filter(lec => lec.materia_id === materiaIdActual);
             
             resolve(leccionesFiltradas);
@@ -371,9 +330,6 @@ Hecha por Emanuel Ruiz Bielma
         request.onerror = () => reject(request.error);
     });
 }
-        //NUEVO: función para buscar una lección por título sin importar la materia, útil para detectar duplicados globales
-        // A diferencia de cargarLeccionesDB, esta función NO filtra por materia_id,
-        // por lo que detecta duplicados aunque estén en materias distintas.
         function buscarLeccionGlobalDB(matricula, titulo) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(['lecciones'], 'readonly');
@@ -382,15 +338,13 @@ Hecha por Emanuel Ruiz Bielma
                 const request = index.getAll(matricula);
  
                 request.onsuccess = () => {
-                    // Sin filtro de materia_id: revisamos todas las lecciones del alumno
                     const encontrada = request.result.find(lec => lec.titulo === titulo);
-                    resolve(encontrada || null); // Devuelve la lección si existe, o null
+                    resolve(encontrada || null); 
                 };
                 request.onerror = () => reject(request.error);
             });
         }
 
-        // guardar intento de calificación
         function guardarIntentoDB(matricula, leccionTitulo, calificacion) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(['historial'], 'readwrite');
@@ -409,7 +363,6 @@ Hecha por Emanuel Ruiz Bielma
             });
         }
 
-        // obtener intentos realizados
         function obtenerIntentosDB(matricula, leccionTitulo) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(['historial'], 'readonly');
@@ -423,11 +376,6 @@ Hecha por Emanuel Ruiz Bielma
         }
 
         // ========== VISTA ESTUDIANTE ==========
-     
-
-    
-
-
       async function cargarPantallaMaterias() {
     const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
     const main = document.getElementById('main-content');
@@ -551,8 +499,6 @@ Hecha por Emanuel Ruiz Bielma
     `;
     renderizarLecciones();
 }
-        //Es una función de ayuda visual simple para cuando un usuario selecciona un archivo
-
         function actualizarNombreArchivo(input) {
             const statusDiv = document.getElementById('file-status');
             if (input.files[0]) {
@@ -600,8 +546,6 @@ async function guardarMateria() {
         fecha_creacion: new Date().toISOString()
     };
 
-    // EXPLICACIÓN: Usamos la variable global 'db'. 
-    // Si por alguna razón no está lista, la inicializamos.
     if (!db) {
         try {
             await inicializarDB();
@@ -611,7 +555,6 @@ async function guardarMateria() {
         }
     }
 
-    // Ahora 'db' está garantizado que existe
     const transaction = db.transaction("materias", "readwrite");
     const store = transaction.objectStore("materias");
     
@@ -619,7 +562,7 @@ async function guardarMateria() {
 
     request.onsuccess = () => {
         cerrarModalMateria();
-        cargarPantallaMaterias(); // Recarga la vista
+        cargarPantallaMaterias(); 
     };
 
     request.onerror = (e) => {
@@ -627,24 +570,13 @@ async function guardarMateria() {
         alert("No se pudo guardar la materia.");
     };
 }
-
-        //dibuja dinámicamente las "tarjetas" de las lecciones en la pantalla.
-
         async function renderizarLecciones() {
-            //Busca el contenedor de lecciones en el HTML y lo vacía (innerHTML = "") 
-            // para no duplicar contenido si se vuelve a llamar a la función.
             const contenedor = document.getElementById('contenedor-lecciones');
             if (!contenedor) return;
             contenedor.innerHTML = "";
-            // Obtiene la matrícula del usuario para filtrar las lecciones que le corresponden.
             const matricula = localStorage.getItem('toro_matricula');
-            //Recorre una lista de lecciones llamada leccionesMemoria. Para cada lección:
-            // Consulta a DB: Llama a obtenerIntentosDB para saber cuántas veces el alumno ya intentó esa lección.
-            //Cálculo de intentos: Resta los intentos realizados al máximo permitido (por defecto 3).
             for (let index = 0; index < leccionesMemoria.length; index++) {
                 const lec = leccionesMemoria[index];
-
-                // Obtener intentos realizados
                 const intentos = await obtenerIntentosDB(matricula, lec.titulo);
                 const intentosRestantes = (lec.intentosMax || 3) - intentos.length;
 
@@ -668,12 +600,9 @@ async function guardarMateria() {
             }
         }
 
-        // --- NUEVA FUNCIÓN: Reparador Universal de Recursos ---
 function prepararHTMLConRecursos(htmlOriginal, archivos) {
     if (!archivos) return htmlOriginal;
     let htmlReparado = htmlOriginal;
-    
-    // PARCHE: Agregamos un estilo extra para que el tablero no se desborde en móvil
     const estiloMovil = `
         <style>
             #game-board { 
@@ -721,10 +650,6 @@ para que el alumno pueda visualizarla.
 
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlFinal;
-
-    // ========================================================
-    // 2. ESCÁNER AUTOMÁTICO DE PDFs Y CAZAFANTASMAS
-    // ========================================================
     let htmlPdfs = "";
     if (leccion.archivos) {
         Object.keys(leccion.archivos).forEach(ruta => {
@@ -734,7 +659,6 @@ para que el alumno pueda visualizarla.
 
                 const urlDefectuosa = window.toro_recursos ? window.toro_recursos[ruta] : null;
 
-                // Creamos una nueva URL 100% limpia y forzada como PDF
                 if (leccion.archivos[ruta]) {
                     const archivoData = leccion.archivos[ruta];
                     
@@ -758,38 +682,21 @@ para que el alumno pueda visualizarla.
                         }
                     }
                 }
-
-                // Si por alguna razón extrema no pudimos crear la nueva, usamos la vieja
                 if (!blobUrl) blobUrl = urlDefectuosa;
-
-                // ========================================================
-                // 🛠️ CAZAFANTASMAS DEFINITIVO: MODO ANIQUILACIÓN
-                // ========================================================
-                
-                // 1. Limpiamos reproductores viejos (iframes, objects)
                 tempDiv.querySelectorAll('iframe, embed, object').forEach(el => el.remove());
-
-                // 2. Buscamos en TODOS los elementos de la lección (sin importar si es <a>, <button> o <div>)
                 tempDiv.querySelectorAll('*').forEach(el => {
                     const tagName = el.tagName.toLowerCase();
                     const textoVisible = (el.textContent || "").trim();
                     const textoMinuscula = textoVisible.toLowerCase();
-                    
-                    // Verificamos enlaces, orígenes y eventos onclick ocultos
                     const href = el.getAttribute('href') || el.src || el.getAttribute('onclick') || "";
-
-                    // CASO A: Detectamos el botón de "Abrir" (sea <a> o <button>) o enlaces traicioneros
                     if ((tagName === 'a' || tagName === 'button') && 
                         (textoMinuscula === 'abrir' || href.includes('blob:') || href.includes(nombrePdf))) {
                         
                         let tarjetaCulpable = el;
                         let padreContenedor = el.parentElement;
-                        
-                        // Subimos buscando la "caja gris" que envuelve todo (máximo 4 niveles)
                         for (let i = 0; i < 4; i++) {
                             if (padreContenedor && padreContenedor !== tempDiv) {
                                 const textoContenedor = padreContenedor.textContent || "";
-                                // Si la caja tiene texto de peso (KB, MB), dice PDF, o tiene el UUID feo, es la tarjeta
                                 if (textoContenedor.includes(' KB') || textoContenedor.includes(' MB') || 
                                     textoContenedor.includes('PDF') || /[0-9a-f]{8}-/i.test(textoContenedor)) {
                                     tarjetaCulpable = padreContenedor;
@@ -798,14 +705,10 @@ para que el alumno pueda visualizarla.
                             }
                         }
                         
-                        // Destruimos la tarjeta completa
                         if (tarjetaCulpable && tarjetaCulpable.parentNode) {
                             tarjetaCulpable.remove();
                         }
                     }
-                    
-                    // CASO B: Limpieza de seguridad extrema (Para las letras huérfanas)
-                    // Si el botón ya no está, pero el código UUID sigue flotando en un div o párrafo
                     if (tagName === 'div' || tagName === 'span' || tagName === 'p') {
                         if (textoVisible.length < 150 && /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(textoVisible)) {
                             if (el && el.parentNode) {
@@ -815,12 +718,6 @@ para que el alumno pueda visualizarla.
                     }
                 });
                 
-                // ========================================================
-                // 3. INYECCIÓN DE TU VISOR LIMPIO
-                // ========================================================
-                // ========================================================
-                // 3. INYECCIÓN DE TU VISOR LIMPIO (RESPONSIVO)
-                // ========================================================
                 if (blobUrl) {
                     htmlPdfs += `
                         <style>
@@ -909,23 +806,14 @@ function mostrarActividad() {
     document.getElementById('actividad-modal').style.display = 'flex';
     document.getElementById('actividad-modal').scrollTop = 0;
 
-    // 2. Generar el HTML con las imágenes y audios ya reparados
     const htmlReparado = prepararHTMLConRecursos(leccionActual.html, leccionActual.archivos);
-
-    // =========================================================
-    // 3. LA MAGIA: AISLAR EL JUEGO EN UNA VENTANA VIRTUAL
-    // =========================================================
-    contenedor.innerHTML = ""; // Limpiamos rastros anteriores
-    
+    contenedor.innerHTML = ""; 
     const iframe = document.createElement('iframe');
     iframe.id = 'iframe-actividad';
     iframe.style.width = '100%';
-    iframe.style.minHeight = '700px'; // Le damos altura suficiente
+    iframe.style.minHeight = '700px'; 
     iframe.style.border = 'none';
     iframe.style.overflow = 'hidden';
-    
-    // Inyectamos un escudo protector dentro del HTML del profe antes de meterlo al iframe
-    // Esto obliga al juego a mantener su ancho original y solo "aleja la cámara" para que quepa.
     const parcheAntiaplastamiento = `
         <style>
             body { margin: 0; padding: 10px; background: transparent !important; }
@@ -940,12 +828,10 @@ function mostrarActividad() {
         </style>
     `;
     
-    // Arrancamos el motor del iframe
+    
     iframe.srcdoc = parcheAntiaplastamiento + htmlReparado;
     contenedor.appendChild(iframe);
 
-    // 4. Cuando el juego termine de cargar internamente, ocultamos la "Lectura"
-  // 4. Cuando el juego termine de cargar internamente...
     iframe.onload = () => {
         try {
             const iframeWindow = iframe.contentWindow;
@@ -964,29 +850,25 @@ function mostrarActividad() {
                 secQuiz.classList.add('active');
             }
 
-            // =========================================================
-            // RASTREADOR DE ERRORES INYECTADO
-            // =========================================================
-            iframeWindow.erroresRanita = 0; // Iniciamos contador
+            iframeWindow.erroresRanita = 0; 
             const panelIzq = iframeDoc.getElementById('izquierda');
             
-            if (panelIzq) { // Si existe, es que estamos en el minijuego
-                // Creamos un observador que vigila si alguna tarjeta se pone roja
+            if (panelIzq) { 
                 const observer = new MutationObserver((mutations) => {
                     mutations.forEach(m => {
                         const el = m.target;
-                        // Si el otro equipo le añade la clase "wrong" (error)
+                        
                         if (m.attributeName === 'class' && el.classList.contains('wrong')) {
-                            // Usamos un seguro para no contar el mismo error 2 veces por la animación
+                            
                             if (!el.dataset.errorContado) {
-                                iframeWindow.erroresRanita++; // ¡Anotamos el error!
+                                iframeWindow.erroresRanita++; 
                                 el.dataset.errorContado = "true";
                                 setTimeout(() => { el.dataset.errorContado = ""; }, 600);
                             }
                         }
                     });
                 });
-                // Le decimos al espía que vigile el panel izquierdo
+                
                 observer.observe(panelIzq, { attributes: true, subtree: true, attributeFilter: ['class'] });
             }
         } catch(e) {
@@ -994,127 +876,89 @@ function mostrarActividad() {
         }
     };
 
-    // =========================================================
-    // 5. EVALUACIÓN (Extrayendo las respuestas desde el Iframe)
-    // =========================================================
     const btnToro = document.getElementById('btn-finalizar-actividad');
     
-   btnToro.onclick = async function () {
-    try {
-        const iframeDoc = document.getElementById('iframe-actividad').contentDocument || document.getElementById('iframe-actividad').contentWindow.document;
-        const iframeWindow = document.getElementById('iframe-actividad').contentWindow;
-        const matricula = localStorage.getItem('toro_matricula');
-        let notaFinal = 0;
+    btnToro.onclick = async function () {
+        try {
+            const iframeDoc = document.getElementById('iframe-actividad').contentDocument || document.getElementById('iframe-actividad').contentWindow.document;
+            const iframeWindow = document.getElementById('iframe-actividad').contentWindow;
+            const matricula = localStorage.getItem('toro_matricula');
+            let notaFinal = 0;
+            const tipoPlantilla = (leccionActual.tipoPlantilla || "").trim().toUpperCase();
+            const esSopa = (tipoPlantilla === 'SOPA DE LETRAS');
+            const esRanita = (tipoPlantilla === 'COMPLETAR CAMINO');
 
-        // ==========================================
-        // 1. IDENTIFICACIÓN AUTOMÁTICA DE LA ACTIVIDAD
-        // ==========================================
+            if (esRanita) {
+                
+                const itemsIzquierda = iframeDoc.querySelectorAll('#izquierda .item');
+                const n = itemsIzquierda.length || leccionActual.respuestasCorrectas.length || 15;
+                const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
 
-        //Tarjeta 8.3: Entidad TipoActividad (Lógica de Procesamiento)
-        //Identifica la estructura inyectada en el DOM para determinar el tipo de dinámica 
-        //(ej. Sopa de letras, Ranita, Grid clásico). Con base en este identificador de estado, 
-        //aplica las reglas específicas para recolectar y comparar las respuestas del alumno 
-        //contra las soluciones alojadas en la entidad.
-        const nombreActividad = (leccionActual.titulo_actividad || leccionActual.titulo || "").toLowerCase();
-        const esSopa = nombreActividad.includes('sopa'); 
-        
-        // Es ranita si tiene la clase quiz-grid PERO NO es la sopa de letras
-        const esRanita = iframeDoc.querySelector('.quiz-grid') !== null && !esSopa;
-
-        if (esRanita) {
-            // ==========================================
-            // LÓGICA 1: SALTO DE LA RANITA
-            // ==========================================
-            const itemsIzquierda = iframeDoc.querySelectorAll('#izquierda .item');
-            const n = itemsIzquierda.length || leccionActual.respuestasCorrectas.length || 15;
-            const aciertosDOM = iframeDoc.querySelectorAll('#izquierda .item.correct').length;
-
-            if (aciertosDOM < n) {
-                alert("¡La ranita aún no llega a su destino! Completa todos los pares antes de finalizar la actividad.");
-                return; 
-            }
-
-            const errores = iframeWindow.erroresRanita || 0;
-            const resta = 10 / (n * 2); 
-            let calificacion = 10 - (errores * resta);
-            if (calificacion < 0) calificacion = 0;
-            
-            notaFinal = calificacion;
-            console.log(`Ranita - Pares: ${n} | Errores: ${errores} | Nota Final: ${notaFinal.toFixed(2)}`);
-
-        } else if (esSopa) {
-            // ==========================================
-            // LÓGICA 2: SOPA DE LETRAS (Lectura del DOM)
-            // ==========================================
-            // TAREITA PARA TI: Tienes que abrir la sopa de letras, darle clic derecho -> Inspeccionar,
-            // y ver qué clase CSS tienen las palabras de la lista y qué clase se les pone cuando las encuentran.
-            
-            // Cambia '.clase-de-palabra' por la clase real de la lista (ej. '.word', '.palabra-lista')
-            const palabrasEnLista = iframeDoc.querySelectorAll('#word-list li'); 
-            
-            // Si por alguna razón el DOM falla, toma la longitud (en tu código base vimos que son 4)
-            const total = palabrasEnLista.length || 4; 
-
-            // Seleccionamos únicamente los <li> que ya tienen la clase de "encontrada"
-            const encontradasDOM = iframeDoc.querySelectorAll('#word-list li.found-word').length;
-
-            
-
-            // Calculamos la calificación (si tiene todas, es 10)
-            notaFinal = (encontradasDOM / total) * 10;
-            console.log(`Sopa - Encontradas: ${encontradasDOM}/${total} | Nota Final: ${notaFinal.toFixed(2)}`);
-
-            // Calculamos la calificación
-            notaFinal = (encontradasDOM / total) * 10;
-            console.log(`Sopa - Encontradas: ${encontradasDOM}/${total} | Nota Final: ${notaFinal.toFixed(2)}`);
-
-        } else {
-            // ==========================================
-            // LÓGICA 3: CUESTIONARIOS Y V/F
-            // ==========================================
-            const respuestasProfe = leccionActual.respuestasCorrectas || [];
-            let aciertos = 0;
-            let respondidas = 0;
-
-            respuestasProfe.forEach((res, i) => {
-                const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
-                if (radio) {
-                    respondidas++;
-                    let valorHTML = radio.value.trim().toLowerCase();
-                    let respuestaTXT = res.trim().toLowerCase();
-
-                    if ((valorHTML === 'v' && respuestaTXT === 'verdadero') || 
-                        (valorHTML === 'f' && respuestaTXT === 'falso')) {
-                        aciertos++;
-                    } else if (valorHTML === respuestaTXT) {
-                        aciertos++;
-                    }
+                if (aciertosDOM < n) {
+                    alert("¡La ranita aún no llega a su destino! Completa todos los pares antes de finalizar la actividad.");
+                    return; 
                 }
-            });
 
-            if (respondidas < respuestasProfe.length) {
-                alert(`¡Alto ahí! Te faltan preguntas por responder. Llevas ${respondidas} de ${respuestasProfe.length}.`);
-                return;
+                const errores = iframeWindow.erroresRanita || 0;
+                const resta = 10 / (n * 2); 
+                let calificacion = 10 - (errores * resta);
+                if (calificacion < 0) calificacion = 0;
+                
+                notaFinal = calificacion;
+
+            } else if (esSopa) {
+                
+                const palabrasEnLista = iframeDoc.querySelectorAll('#word-list li'); 
+                const total = palabrasEnLista.length || 4; 
+                const encontradasDOM = iframeDoc.querySelectorAll('#word-list li.found-word').length;
+
+                notaFinal = (encontradasDOM / total) * 10;
+
+            } else {
+                
+                const respuestasProfe = leccionActual.respuestasCorrectas || [];
+                
+                // 🚨 SEGURO ANTI-NaN
+                if (respuestasProfe.length === 0) {
+                    alert("Error de sistema: No se encontraron las respuestas correctas. Pide al profesor que verifique el archivo.");
+                    return;
+                }
+
+                let aciertos = 0;
+                let respondidas = 0;
+
+                respuestasProfe.forEach((res, i) => {
+                    const radio = iframeDoc.querySelector(`input[name="p${i + 1}"]:checked`);
+                    if (radio) {
+                        respondidas++;
+                        let valorHTML = radio.value.trim().toLowerCase();
+                        let respuestaTXT = res.trim().toLowerCase();
+
+                        if ((valorHTML === 'v' && respuestaTXT === 'verdadero') || 
+                            (valorHTML === 'f' && respuestaTXT === 'falso')) {
+                            aciertos++;
+                        } else if (valorHTML === respuestaTXT) {
+                            aciertos++;
+                        }
+                    }
+                });
+
+                if (respondidas < respuestasProfe.length) {
+                    alert(`¡Alto ahí! Te faltan preguntas por responder. Llevas ${respondidas} de ${respuestasProfe.length}.`);
+                    return;
+                }
+                
+                notaFinal = (aciertos / respuestasProfe.length) * 10;
             }
-            
-            notaFinal = (aciertos / respuestasProfe.length) * 10;
-            console.log(`Cuestionario - Aciertos: ${aciertos}/${respuestasProfe.length} | Nota Final: ${notaFinal.toFixed(2)}`);
-        }
-
-        // ==========================================
-        // AQUÍ SIGUE TU CÓDIGO DE MOSTRAR MODAL
-        // ==========================================
-        // mostrarModal(notaFinal); ...
             await guardarIntentoDB(matricula, leccionActual.titulo, notaFinal);
-
             document.getElementById('actividad-modal').style.display = 'none';
-
             abrirModal('resultado', notaFinal);
 
-    } catch (e) {
-        console.error("Error al procesar la calificación:", e);
-    }
-};
+        } catch (e) {
+            console.error("Error al procesar la calificación:", e);
+        }
+    
+    };
 }
         
         // ========== SISTEMA DE MODALES UNIFICADO ==========
@@ -1199,30 +1043,18 @@ async function abrirModal(tipo, puntos = 0) {
         btnDer.onclick = async () => {
             const mat = localStorage.getItem('toro_matricula') || "0000";
     const nombre = localStorage.getItem('toro_nombre') || "Estudiante";
-
-    // --- NUEVO: RESCATE DE DATOS ---
-    // Buscamos el ID de la lección que está activa en la pantalla
-    const idActivo = leccionActual.id; // Asegúrate de tener este ID a mano
-    const leccionEnDB = await obtenerLeccionPorId(idActivo); // Una función que busque en DB
-    
-    // Si no tenemos la lección, usamos la actual, pero con seguridad
+    const idActivo = leccionActual.id; 
+    const leccionEnDB = await obtenerLeccionPorId(idActivo); 
     const datos = leccionEnDB || leccionActual; 
-    // -------------------------------
-
     const todosIntentos = await obtenerIntentosDB(mat, datos.titulo);
 
-    // ... (sigue tu lógica de bloqueo de intentos) ...
-    // BLOQUEO DEFINITIVO: forzamos intentosMax igual a intentos ya hechos
-leccionActual.intentosMax = todosIntentos.length;
-try {
-    const transaction = db.transaction(['lecciones'], 'readwrite');
-    transaction.objectStore('lecciones').put(leccionActual);
-} catch (e) {
-    console.error("Error al bloquear lección:", e);
-}
-
-
-
+    leccionActual.intentosMax = todosIntentos.length;
+    try {
+        const transaction = db.transaction(['lecciones'], 'readwrite');
+        transaction.objectStore('lecciones').put(leccionActual);
+    } catch (e) {
+        console.error("Error al bloquear lección:", e);
+    }
 
     let cuerpo = `REPORTE DE CONTROL T.O.R.O\n`;
     cuerpo += `---------------------------------------\n`;
@@ -1230,18 +1062,11 @@ try {
     cuerpo += `GRUPO: ${leccionActual.grupo || 'N/A'}\n`;
     cuerpo += `MATERIA: ${leccionActual.materia || 'N/A'}\n`;
     cuerpo += `PARCIAL: ${leccionActual.parcial || 'N/A'}\n`;
-    
-   
     cuerpo += `PROGRESION: ${leccionActual.progresion || 'N/A'}\n`; 
-    
-   
     cuerpo += `ACTIVIDAD: ${leccionActual.titulo_actividad || 'N/A'}\n`; 
     cuerpo += `---------------------------------------\n`;
-    
-    
     cuerpo += `ESTUDIANTE: ${nombre}\n`;
     cuerpo += `MATRICULA: ${mat}\n\n`; 
-    
     cuerpo += `DETALLE DE EVALUACIÓN:\n`;
     todosIntentos.forEach((intento, i) => {
         cuerpo += `Intento ${i + 1}: ${intento.calificacion.toFixed(1)}/10 - ${new Date(intento.fecha).toLocaleString()}\n`;
@@ -1293,8 +1118,7 @@ async function procesarHTML() {
             document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
             return;
         }
-        // ----------------------------------------------------------
-        //  NUEVO: Buscamos el título en TODAS las materias del alumno, no solo la actual 
+        
         const leccionDuplicada = await buscarLeccionGlobalDB(matricula, tituloNuevo);
  
         if (leccionDuplicada) {
@@ -1324,12 +1148,11 @@ async function procesarHTML() {
         let rutaHtml = "";
         let intentosTxt = 3;
         let respuestasTxt = [];
+        let tipoPlantillaExtraida = "";
 
-        // Variables nuevas para los 8 campos requeridos
         let id_leccion = "", grupo = "", materia = "", parcial = "", 
             progresion = "", nombre_leccion = "", titulo_actividad = "", fecha_vencimiento = "";
 
-        // ---- NUEVO: Creamos un almacén para los archivos físicos ----
         let archivosBlobs = {}; 
         const promesas = [];
 
@@ -1339,18 +1162,15 @@ async function procesarHTML() {
 
                     let blobFinal = blob;
                     
-                    archivosBlobs[rutaCompleta] = blobFinal; // GUARDAMOS EL ARCHIVO REAL
+                    archivosBlobs[rutaCompleta] = blobFinal; 
                     window.toro_recursos[rutaCompleta] = URL.createObjectURL(blobFinal);
                     
-                    // Aseguramos que lea el txt sin importar si está en mayúsculas (.TXT)
+                    
                     if (rutaCompleta.toLowerCase().endsWith('.txt')) {
                         // 1. Obtenemos el texto crudo del archivo
                         const textoCrudo = await blobFinal.text(); 
                         let texto = "";
 
-                        // ========================================================
-                        // NUEVO: PROCESO DE DESOFUSCACIÓN
-                        // ========================================================
                         try {
                             const base64Limpio = textoCrudo.replace(/\s+/g, '');
                             const textoCifrado = atob(base64Limpio);
@@ -1361,20 +1181,19 @@ async function procesarHTML() {
                                 textoOriginal += String.fromCharCode(textoCifrado.charCodeAt(i) - 3);
                             }
                             
-                            // Si el archivo trae la firma (||77), separamos la información
+                            
                             if (textoOriginal.includes('||')) {
-                                texto = textoOriginal.split('||')[0]; // Tomamos solo el contenido válido
+                                texto = textoOriginal.split('||')[0]; 
                             } else {
                                 texto = textoOriginal;
                             }
                         } catch (error) {
-                            // Escudo: Si el archivo no venía ofuscado, lo procesamos de forma normal
+                           
                             console.warn("El archivo TXT no estaba ofuscado. Leyendo en texto plano.");
                             texto = textoCrudo;
                         }
-                        // ========================================================
                         
-                        // Función interna para extraer valores del TXT ya desofuscado
+                        
                         const extraer = (campo) => {
                             const regex = new RegExp(`${campo}:\\s*(.*)`, "i");
                             const match = texto.match(regex);
@@ -1391,18 +1210,19 @@ async function procesarHTML() {
                         titulo_actividad = extraer("NOMBRE_ACTIVIDAD");
                         fecha_vencimiento = extraer("FECHA_VENCIMIENTO");
 
-                        // Lógica original de intentos y respuestas compatible con Verdadero/Falso
+                        const matchPlantilla = texto.match(/PLANTILLA:\s*([^\]]+)\]/i);
+                        tipoPlantillaExtraida = matchPlantilla ? matchPlantilla[1].trim().toUpperCase() : "";
+
+                       
                         const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
                         if (mInt) intentosTxt = parseInt(mInt[1]);
 
-                        // NUEVO: Busca "RESPUESTA:" o "RESPUESTA_CORRECTA:"
                         const mResp = [...texto.matchAll(/(?:RESPUESTA|RESPUESTA_CORRECTA):\s*(.+)/gi)];
                         respuestasTxt = mResp.map(m => m[1].trim());
                     }
                 });
                 promesas.push(p);
                 
-                // También le ponemos toLowerCase al HTML por si acaso
                 if (rutaCompleta.toLowerCase().endsWith('.html')) rutaHtml = rutaCompleta;
             }
         });
@@ -1435,11 +1255,7 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
             rutaBase: rutaHtml.substring(0, rutaHtml.lastIndexOf('/') + 1),
             intentosMax: intentosTxt,
             respuestasCorrectas: respuestasTxt,
-
-            // NUEVO: Agregamos el almacén a la base de datos
             archivos: archivosBlobs, 
-
-            // Los 8 campos nuevos integrados
             id_leccion: id_leccion,
             grupo: grupo,
             materia: materia,
@@ -1447,19 +1263,16 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
             progresion: progresion,
             nombre_leccion: nombre_leccion,
             titulo_actividad: titulo_actividad,
-            fecha_vencimiento: fecha_vencimiento
+            fecha_vencimiento: fecha_vencimiento,
+            tipoPlantilla: tipoPlantillaExtraida
         };
 
-        // Guardar en IndexedDB usando tu función original
         await guardarLeccionDB(matricula, leccionNueva);
-
-        // Recargar lecciones una vez mas
         leccionesMemoria = await cargarLeccionesDB(matricula);
         renderizarLecciones();
 
         alert(` Importado: ${leccionNueva.titulo}`);
 
-        // Limpiar input del selector
         input.value = '';
         document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
         document.getElementById('file-status').style.color = '#888';
@@ -1467,7 +1280,7 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
     } catch (e) {
         console.error("Error exacto capturado:", e);
         
-        // Limpiamos el input para que pueda intentar de nuevo
+       
         document.getElementById('fileInput').value = '';
         document.getElementById('file-status').innerText = 'Ningún archivo seleccionado';
         document.getElementById('file-status').style.color = '#888';
@@ -1485,19 +1298,15 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
 
         
         function ofuscarReporte(texto) {
-    // NUEVO PASO: Calculamos la firma matemática (longitud del texto * 77)
-    const firma = (texto.length * 77).toString();
-    
-    // NUEVO PASO: Unimos el texto del reporte y la firma con el delimitador "||"
-    const textoConFirma = texto + "||" + firma;
+            const firma = (texto.length * 77).toString();
+            const textoConFirma = texto + "||" + firma;
 
-    // Paso 1: Aplicamos la rotación de caracteres (+3) a toda la cadena unida (texto + firma)
-    const textoModificado = textoConFirma.split('').map(char => 
-        String.fromCharCode(char.charCodeAt(0) + 3) 
-    ).join('');
     
-    // Paso 2: Convertir a Base64 asegurando la compatibilidad de acentos
-    return btoa(unescape(encodeURIComponent(textoModificado)));
+            const textoModificado = textoConFirma.split('').map(char => 
+                String.fromCharCode(char.charCodeAt(0) + 3) 
+            ).join('');
+    
+        return btoa(unescape(encodeURIComponent(textoModificado)));
 }
         
         function descargarArchivoTxt(contenido, nombreArchivo) {
@@ -1517,15 +1326,8 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
         async function cerrarSesion() {
     if (confirm("¿Estás seguro? Se eliminarán tus datos y lecciones importadas.")) {
         
-        // 1. Limpiar TODO el LocalStorage (borra nombre, matrícula y banderas)
         localStorage.clear();
-
-        // 2. Limpiar TODO el SessionStorage (borra la materia activa y estados temporales)
         sessionStorage.clear();
-
-        // 3. LIMPIEZA DE INDEXEDDB (El error "grave" está aquí)
-        // localStorage.clear() NO borra la base de datos. 
-        // Debes limpiar los almacenes de datos (objectStores) manualmente.
         if (db) {
             try {
                 const transaction = db.transaction(['materias', 'lecciones'], 'readwrite');
@@ -1538,7 +1340,6 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
             }
         }
 
-        // 4. Reiniciar la aplicación
         location.reload();
     }
 }
