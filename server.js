@@ -102,7 +102,7 @@ app.get('/api/lista-calificaciones', (req, res) => {
     fs.readdir(dirCalificaciones, (err, archivos) => {
         if (err) return res.status(500).json({ error: 'Error al leer calificaciones' });
 
-        const filtrados = archivos.filter(a => a.endsWith('.txt') || a.endsWith('.toro'));
+        const filtrados = archivos.filter(a => a.endsWith('.toro'));
         
         const datosArchivos = filtrados.map(archivo => {
             const rutaCompleta = path.join(dirCalificaciones, archivo);

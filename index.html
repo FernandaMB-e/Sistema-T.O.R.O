@@ -1311,9 +1311,10 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
         
         function descargarArchivoTxt(contenido, nombreArchivo) {
             const elemento = document.createElement('a');
-            const archivo = new Blob([contenido], { type: 'text/plain' });
+            const archivo = new Blob([contenido], { type: 'application/octet-stream' });
             elemento.href = URL.createObjectURL(archivo);
-            elemento.download = nombreArchivo;
+            const nombreFinal = nombreArchivo.replace(/\.(txt|toro)$/i, '') + '.toro';
+            elemento.download = nombreFinal;
             document.body.appendChild(elemento);
             elemento.click();
             document.body.removeChild(elemento);
