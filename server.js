@@ -7,24 +7,22 @@ const os = require('os');
 
 const app = express();
 app.use(cors());
-// Servir todos los archivos estáticos (HTML, CSS, JS, Assets) desde la raíz del proyecto
-app.use(express.static(__dirname));
 
 // Asegurar que la ruta principal cargue la vista del alumno
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(baseDir, 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
-const baseDir = __dirname;
+const baseDir = process.cwd();
 
 if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir);
 
 // ========================================================
 // 1. CARPETAS FÍSICAS
 // ========================================================
-const dirActividades = path.join(__dirname, 'actividades_profe');
-const dirCalificaciones = path.join(__dirname, 'calificaciones_alumnos');
+const dirActividades = path.join(process.cwd(), 'actividades_profe');
+const dirCalificaciones = path.join(process.cwd(), 'calificaciones_alumnos');
 
 if (!fs.existsSync(dirActividades)) fs.mkdirSync(dirActividades);
 if (!fs.existsSync(dirCalificaciones)) fs.mkdirSync(dirCalificaciones);
@@ -59,10 +57,8 @@ app.get('/api/lista-actividades', (req, res) => {
     fs.readdir(dirActividades, (err, archivos) => {
         if (err) return res.status(500).json({ error: 'Error al leer actividades' });
         
-        // Filtramos para que solo muestre archivos .zip
         const zips = archivos.filter(a => a.endsWith('.zip'));
         
-        // Extraemos los metadatos de fecha para cada lección
         const datosActividades = zips.map(archivo => {
             const rutaCompleta = path.join(dirActividades, archivo);
             const stats = fs.statSync(rutaCompleta);
