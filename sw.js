@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toro-v51'; // Sube la versión cada que hagas cambios grandes
+const CACHE_NAME = 'toro-v51'; 
 const assets = [
   './',
   './index.html',
@@ -17,7 +17,7 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// Activación (Limpia cachés viejos)
+
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => {
@@ -29,12 +29,11 @@ self.addEventListener('activate', e => {
   return self.clients.claim();
 });
 
-// ESTRATEGIA: NETWORK FIRST (Ideal para desarrollo y actualización rápida)
+
 self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(networkResponse => {
-        // Si hay red, guardamos la copia nueva en el caché y devolvemos la respuesta
         return caches.open(CACHE_NAME).then(cache => {
           cache.put(e.request, networkResponse.clone());
           return networkResponse;

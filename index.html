@@ -1167,59 +1167,54 @@ async function procesarHTML() {
                     
                     
                     if (rutaCompleta.toLowerCase().endsWith('.txt')) {
-                        // 1. Obtenemos el texto crudo del archivo
-                        const textoCrudo = await blobFinal.text(); 
-                        let texto = "";
+    // 1. Obtenemos el texto crudo del archivo
+    const textoCrudo = await blobFinal.text(); 
+    let texto = "";
 
-                        try {
-                            const base64Limpio = textoCrudo.replace(/\s+/g, '');
-                            const textoCifrado = atob(base64Limpio);
-                            let textoOriginal = '';
-                            
-                            // Revertimos el cifrado César (-3)
-                            for (let i = 0; i < textoCifrado.length; i++) {
-                                textoOriginal += String.fromCharCode(textoCifrado.charCodeAt(i) - 3);
-                            }
-                            
-                            
-                            if (textoOriginal.includes('||')) {
-                                texto = textoOriginal.split('||')[0]; 
-                            } else {
-                                texto = textoOriginal;
-                            }
-                        } catch (error) {
-                           
-                            console.warn("El archivo TXT no estaba ofuscado. Leyendo en texto plano.");
-                            texto = textoCrudo;
-                        }
-                        
-                        
-                        const extraer = (campo) => {
-                            const regex = new RegExp(`${campo}:\\s*(.*)`, "i");
-                            const match = texto.match(regex);
-                            return match ? match[1].trim() : "No especificado";
-                        };
+    try {
+        const base64Limpio = textoCrudo.replace(/\s+/g, '');
 
-                        // Extraer los 8 campos obligatorios
-                        id_leccion = extraer("ID_LECCION");
-                        grupo = extraer("GRUPO");
-                        materia = extraer("MATERIA");
-                        parcial = extraer("PARCIAL");
-                        progresion = extraer("TEMA");
-                        nombre_leccion = extraer("TITULO");
-                        titulo_actividad = extraer("NOMBRE_ACTIVIDAD");
-                        fecha_vencimiento = extraer("FECHA_VENCIMIENTO");
+        // Convertimos Base64 a texto UTF-8 correctamente
+        const textoCifrado = base64ATextoUTF8(base64Limpio);
 
-                        const matchPlantilla = texto.match(/PLANTILLA:\s*([^\]]+)\]/i);
-                        tipoPlantillaExtraida = matchPlantilla ? matchPlantilla[1].trim().toUpperCase() : "";
+        // Revertimos el cifrado César (-3)
+        const textoOriginal = moverCaracteres(textoCifrado, -3);
 
-                       
-                        const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
-                        if (mInt) intentosTxt = parseInt(mInt[1]);
+        if (textoOriginal.includes('||')) {
+            texto = textoOriginal.split('||')[0]; 
+        } else {
+            texto = textoOriginal;
+        }
 
-                        const mResp = [...texto.matchAll(/(?:RESPUESTA|RESPUESTA_CORRECTA):\s*(.+)/gi)];
-                        respuestasTxt = mResp.map(m => m[1].trim());
-                    }
+    } catch (error) {
+        console.warn("El archivo TXT no estaba ofuscado. Leyendo en texto plano.");
+        texto = textoCrudo;
+    }
+
+    const extraer = (campo) => {
+        const regex = new RegExp(`${campo}:\\s*(.*)`, "i");
+        const match = texto.match(regex);
+        return match ? match[1].trim() : "No especificado";
+    };
+
+    id_leccion = extraer("ID_LECCION");
+    grupo = extraer("GRUPO");
+    materia = extraer("MATERIA");
+    parcial = extraer("PARCIAL");
+    progresion = extraer("TEMA");
+    nombre_leccion = extraer("TITULO");
+    titulo_actividad = extraer("NOMBRE_ACTIVIDAD");
+    fecha_vencimiento = extraer("FECHA_VENCIMIENTO");
+
+    const matchPlantilla = texto.match(/PLANTILLA:\s*([^\]]+)\]/i);
+    tipoPlantillaExtraida = matchPlantilla ? matchPlantilla[1].trim().toUpperCase() : "";
+
+    const mInt = texto.match(/INTENTOS_MAX:\s*(\d+)/);
+    if (mInt) intentosTxt = parseInt(mInt[1]);
+
+    const mResp = [...texto.matchAll(/(?:RESPUESTA|RESPUESTA_CORRECTA):\s*(.+)/gi)];
+    respuestasTxt = mResp.map(m => m[1].trim());
+}
                 });
                 promesas.push(p);
                 
@@ -1297,28 +1292,61 @@ Hecha por Emanuel Ruiz Bielma Tabla 6.3
         // ========== UTILIDADES ==========
 
         
-        function ofuscarReporte(texto) {
-            const firma = (texto.length * 77).toString();
-            const textoConFirma = texto + "||" + firma;
+        function textoABase64UTF8(texto) {
+    const bytes = new TextEncoder().encode(texto);
+    let binario = "";
 
-    
-            const textoModificado = textoConFirma.split('').map(char => 
-                String.fromCharCode(char.charCodeAt(0) + 3) 
-            ).join('');
-    
-        return btoa(unescape(encodeURIComponent(textoModificado)));
+    bytes.forEach(byte => {
+        binario += String.fromCharCode(byte);
+    });
+
+    return btoa(binario);
+}
+
+function base64ATextoUTF8(base64) {
+    const binario = atob(base64.trim());
+    const bytes = new Uint8Array(binario.length);
+
+    for (let i = 0; i < binario.length; i++) {
+        bytes[i] = binario.charCodeAt(i);
+    }
+
+    return new TextDecoder("utf-8").decode(bytes);
+}
+
+function moverCaracteres(texto, cantidad) {
+    return Array.from(texto).map(char => {
+        return String.fromCodePoint(char.codePointAt(0) + cantidad);
+    }).join("");
+}
+
+function ofuscarReporte(texto) {
+    const firma = (texto.length * 77).toString();
+    const textoConFirma = texto + "||" + firma;
+
+    const textoModificado = moverCaracteres(textoConFirma, 3);
+
+    return textoABase64UTF8(textoModificado);
 }
         
-        function descargarArchivoTxt(contenido, nombreArchivo) {
-            const elemento = document.createElement('a');
-            const archivo = new Blob([contenido], { type: 'application/octet-stream' });
-            elemento.href = URL.createObjectURL(archivo);
-            const nombreFinal = nombreArchivo.replace(/\.(txt|toro)$/i, '') + '.toro';
-            elemento.download = nombreFinal;
-            document.body.appendChild(elemento);
-            elemento.click();
-            document.body.removeChild(elemento);
-        }
+       function descargarArchivoTxt(contenido, nombreArchivo) {
+    const elemento = document.createElement('a');
+
+    const archivo = new Blob([contenido], {
+        type: 'text/plain;charset=utf-8'
+    });
+
+    elemento.href = URL.createObjectURL(archivo);
+
+    const nombreFinal = nombreArchivo.replace(/\.(txt|toro)$/i, '') + '.toro';
+    elemento.download = nombreFinal;
+
+    document.body.appendChild(elemento);
+    elemento.click();
+    document.body.removeChild(elemento);
+
+    URL.revokeObjectURL(elemento.href);
+}
 
         function volverALeccion() {
             document.getElementById('modal-container').style.display = 'none';
